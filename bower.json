@@ -1,0 +1,24 @@
+{
+  "name": "wixmp-manager",
+  "version": "1.0.5",
+  "homepage": "https://github.com/wix/bower-wixmp-manager-sdk",
+  "authors": [
+    "Sergey Bolshchikov <sergeyb@wix.com>"
+  ],
+  "description": "Wix Media Platform SDK for management and uploading your media files",
+  "main": "wixmp-manager.js",
+  "keywords": [
+    "sdk",
+    "wixmp",
+    "media"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/bower_components",
+    "test",
+    "tests"
+  ]
+}
