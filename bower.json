@@ -1,6 +1,6 @@
 {
-  "name": "wixmp-manager",
-  "version": "1.0.20",
+  "name": "wixmp-manager-sdk",
+  "version": "1.0.21",
   "homepage": "https://github.com/wix/bower-wixmp-manager-sdk",
   "authors": [
     "Sergey Bolshchikov <sergeyb@wix.com>"
