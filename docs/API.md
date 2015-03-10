@@ -2,7 +2,7 @@
 
 * wixmp
 
-* wixmp.events
+* wixmp.events (see [events.md](events.md))
 * wixmp.events.on(eventName, listener(promise, EventObject))
 * wixmp.events.off(eventName, listener)
 

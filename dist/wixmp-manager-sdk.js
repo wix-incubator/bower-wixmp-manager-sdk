@@ -1,9 +1,52 @@
 ;(function () {
-var bluebird = window.Promise;
-if (bluebird !== window.P) {
+var bluebird_original = window.Promise;
+if (window.Promise !== window.P) {
 console.warn('Bluebird is not available, cancel and progress will not work');
 }
-var src_utils_normalize_uri, src_utils_utils, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_utils_mappers, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_sources_decorators, src_events_list, src_services_upload_collection, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_wixmp;
+var bluebird, src_utils_normalize_uri, src_utils_utils, src_utils_mappers, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_sources_decorators, src_events_list, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_services_file_to_upload, src_services_upload_collection, src_wixmp;
+(function (e) {
+  if (typeof exports === 'object' && typeof module !== 'undefined') {
+    module.exports = e(P);
+  } else if (true) {
+    bluebird = function (bluebird_original) {
+      return typeof e === 'function' ? e(bluebird_original) : e;
+    }(bluebird_original);
+  } else {
+    var f;
+    typeof window !== 'undefined' ? f = window : typeof global !== 'undefined' ? f = global : typeof self !== 'undefined' && (f = self), f.Promise = e(P);
+  }
+}(function (Promise) {
+  Promise.defer = function () {
+    var resolve, reject;
+    var promise = new Promise(function () {
+      resolve = arguments[0];
+      reject = arguments[1];
+    });
+    promise.cancellable();
+    return {
+      resolve: resolve,
+      reject: reject,
+      promise: promise
+    };
+  };
+  Promise.prototype.abort = function () {
+    this.cancel({
+      message: 'aborted_by_user',
+      code: -100
+    });
+  };
+  Promise.prototype.progress = function (callback) {
+    this._progressCallback = callback;
+    return this;
+  };
+  Promise.prototype.notify = function (message) {
+    if (typeof this._progressCallback === 'function') {
+      this._progressCallback(message);
+    }
+    return this;
+  };
+  return Promise;
+}));
 src_utils_normalize_uri = function (uri) {
   if (typeof uri !== 'string') {
     throw new Error('URI is not a string');
@@ -30,7 +73,7 @@ src_utils_utils = function () {
     extend: function (dest) {
       var sources = Array.prototype.slice.call(arguments, 1);
       sources.forEach(function (source) {
-        if (typeof source === 'object' && source != null) {
+        if (typeof source === 'object' && source !== null) {
           Object.keys(source).forEach(function (key) {
             dest[key] = source[key];
           });
@@ -51,6 +94,25 @@ src_utils_utils = function () {
         });
         return result;
       }, {});
+    },
+    bytesToSize: function (bytes) {
+      if (bytes === 0) {
+        return '0 Byte';
+      }
+      var k = 1024;
+      var sizes = [
+        'Bytes',
+        'KB',
+        'MB',
+        'GB',
+        'TB',
+        'PB',
+        'EB',
+        'ZB',
+        'YB'
+      ];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
     },
     /**
      * Return function with preset arguments
@@ -98,13 +160,54 @@ src_utils_utils = function () {
         add(entity, a[entity]);
       });
       return s.join('&').replace(/%20/g, '+');
+    },
+    insertDataInTemplate: function (template, data) {
+      function createRegexp(t, options) {
+        t = t.replace(/[()\[\]\.^$|?+]/g, '\\$&');
+        return new RegExp(t, options);
+      }
+      Object.keys(data).forEach(function (key) {
+        template = template.replace(createRegexp('#' + key + '#', 'g'), data[key]);
+      });
+      return template;
+    },
+    transformModeToVangogh: function (mode) {
+      var vangoghModes = {
+        fill: 'srz',
+        fit: 'srb'
+      };
+      return vangoghModes[mode];
     }
   };
   utils.min = utils.partial(minMaxFinder, 'min');
   utils.max = utils.partial(minMaxFinder, 'max');
   return utils;
 }();
-src_utils_http = function (Promise, normalizeUri, utils) {
+src_utils_mappers = {
+  toObject: function (data) {
+    if (!data) {
+      return null;
+    }
+    if (typeof data === 'string') {
+      if ([
+          '{',
+          '['
+        ].indexOf(data[0]) >= 0) {
+        return JSON.parse(data);
+      }
+      return { message: data };
+    }
+    return data;
+  },
+  toError: function (error) {
+    return {
+      code: error.status,
+      message: error.statusText || error.message || error.data.message || error.data.error && error.data.error.message || '',
+      data: error.data && (error.data.errors || error.data.error || error.data)
+    };
+  }
+};
+src_utils_http = function (Promise, normalizeUri, utils, mappers) {
   
   var post, get, upload, openRequest, encode, buildUrl, parseRequest, parseResponse, wrapRequestWithPromise, defaultOptions;
   defaultOptions = {
@@ -112,42 +215,70 @@ src_utils_http = function (Promise, normalizeUri, utils) {
     cache: true,
     headers: { Accept: 'application/json, text/plain, */*' }
   };
-  Promise.prototype.progress = function (callback) {
-    this._progressCallback = callback;
-    return this;
-  };
-  Promise.prototype.notify = function (message) {
-    if (typeof this._progressCallback === 'function') {
-      this._progressCallback(message);
-    }
-    return this;
-  };
-  wrapRequestWithPromise = function (request, caller, withProgress) {
+  wrapRequestWithPromise = function (request, callSend, hasProgress) {
     var promise = new Promise(function (resolve, reject) {
       request.addEventListener('error', function () {
-        reject(parseRequest(utils.extend({}, request, { statusText: 'error' })));
+        reject(mappers.toError(utils.extend({}, request, {
+          message: 'error',
+          code: -201
+        })));
       }, false);
       request.addEventListener('timeout', function () {
-        reject(parseRequest(utils.extend({}, request, { statusText: 'timeout_has_exceeded' })));
+        reject(mappers.toError(utils.extend({}, request, {
+          message: 'timeout_has_exceeded',
+          code: 408
+        })));
       }, false);
       request.addEventListener('load', function () {
-        if (/^2\d+/.test(request.status.toString())) {
+        if (request.status.toString().match(/^2\d+/i)) {
           resolve(parseRequest(request));
         } else {
-          reject(parseRequest(request));
+          reject(mappers.toError(utils.extend({}, request, {
+            message: 'error',
+            code: request.status,
+            data: mappers.toObject(request.responseText)
+          })));
         }
       }, false);
     });
-    if (withProgress) {
+    if (hasProgress) {
       request.upload.onprogress = function (event) {
         var progress = Math.round(event.lengthComputable ? event.loaded * 100 / event.total : 0);
-        promise.notify(progress);
+        var status = progress <= 99 ? 'uploading' : 'processing';
+        promise.notify({
+          status: status,
+          total: event.total,
+          loaded: event.loaded
+        });
       };
+    } else {
+      request.addEventListener('loadstart', function (event) {
+        if (!event) {
+          return;
+        }
+        promise.notify({
+          status: 'uploading',
+          total: event.total,
+          loaded: event.loaded
+        });
+      }, false);
+      request.addEventListener('loadend', function (event) {
+        if (!event) {
+          return;
+        }
+        promise.notify({
+          status: 'processing',
+          total: event.total,
+          loaded: event.loaded
+        });
+      }, false);
     }
-    promise.cancellable().catch(function () {
-      request.abort();
+    promise.cancellable().catch(function (reason) {
+      if (reason.message === 'aborted_by_user') {
+        request.abort();
+      }
     });
-    caller();
+    callSend();
     return promise;
   };
   parseRequest = function (request) {
@@ -208,6 +339,7 @@ src_utils_http = function (Promise, normalizeUri, utils) {
     request.open(method.toUpperCase(), normalizeUri(url));
     request.responseType = options.responseType;
     request.withCredentials = options.withCredentials;
+    //request.withCredentials = true;
     Object.keys(options.headers).forEach(function (name) {
       request.setRequestHeader(name, options.headers[name]);
     });
@@ -252,7 +384,7 @@ src_utils_http = function (Promise, normalizeUri, utils) {
     post: post,
     upload: upload
   };
-}(bluebird, src_utils_normalize_uri, src_utils_utils);
+}(bluebird, src_utils_normalize_uri, src_utils_utils, src_utils_mappers);
 src_events_notifier = function (Promise) {
   
   var listeners = {};
@@ -408,34 +540,16 @@ src_sources_private_mappers_folder = function (folderData) {
     createdAt: folderData.created_ts
   };
 };
-src_utils_mappers = {
-  toObject: function (data) {
-    if (!data) {
-      return null;
-    }
-    if (typeof data === 'string') {
-      return JSON.parse(data);
-    }
-    return data;
-  },
-  toError: function (error) {
-    return {
-      code: error.status,
-      message: error.statusText || error.data.message || error.data.error && error.data.error.message || '',
-      data: error.data.errors || error.data.error || error.data
-    };
-  }
-};
-src_sources_private_parsers_error = function (Promise, mappers) {
+src_sources_private_parsers_error = function (Promise) {
   
   return function (response) {
     if (response.status === 403 && response.data.error_description === 'Missing Wix session') {
       response.status = 401;
       response.data.message = 'Wix Session required';
     }
-    return Promise.reject(mappers.toError(response));
+    return Promise.reject(response);
   };
-}(bluebird, src_utils_mappers);
+}(bluebird);
 src_sources_private_folders = function (http, toFolder, toError) {
   
   return function (settings) {
@@ -486,7 +600,7 @@ src_sources_private_validators_new_props = function (newProps) {
   }
   return { valid: true };
 };
-src_sources_private_folder = function (http, utils, toFolder, toError, validateNewProps) {
+src_sources_private_folder = function (http, mappers, utils, toFolder, toError, validateNewProps) {
   
   return function (settings) {
     function failHandler(reason) {
@@ -494,11 +608,11 @@ src_sources_private_folder = function (http, utils, toFolder, toError, validateN
     }
     function create(folderName, options) {
       if (!folderName) {
-        return failHandler({
+        return failHandler(mappers.toError({
           status: -200,
           statusText: 'Internal JS Error',
           data: { message: 'Please specify name' }
-        });
+        }));
       }
       options = options || {};
       return http.post(settings.apiUrl + '/folders', {
@@ -512,11 +626,11 @@ src_sources_private_folder = function (http, utils, toFolder, toError, validateN
     function update(folder, newFolderProps) {
       var arePropsValid = validateNewProps(newFolderProps);
       if (arePropsValid.valid === false) {
-        return failHandler({
+        return failHandler(mappers.toError({
           status: -200,
           statusText: 'Internal JS Error',
           data: { message: arePropsValid.message }
-        });
+        }));
       }
       return http.post(settings.apiUrl + '/folders/' + folder.id + '/put', { folder_name: newFolderProps.name }, { withCredentials: true }).then(function (res) {
         res.data = utils.merge(folder, newFolderProps);
@@ -528,15 +642,15 @@ src_sources_private_folder = function (http, utils, toFolder, toError, validateN
       update: update
     };
   };
-}(src_utils_http, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
-src_sources_private_mappers_item = function (normalizeUri, mappers) {
+}(src_utils_http, src_utils_mappers, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
+src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
   
   var compileUrls, rembrandtCompile, vangoghCompile;
   compileUrls = function (item, settings) {
     if (settings.imageOperationsApi === 'rembrandt') {
-      return rembrandtCompile(item, settings);
+      return rembrandtCompile.apply(this, arguments);
     }
-    return vangoghCompile(item, settings);
+    return vangoghCompile.apply(this, arguments);
   };
   rembrandtCompile = function (item, settings) {
     var nameSanitizedFromExtension;
@@ -552,8 +666,8 @@ src_sources_private_mappers_item = function (normalizeUri, mappers) {
     case 'picture':
     case 'site_icon':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/fill/w_195,h_195/' + getFileName(item.file_url)),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/fit/w_375,h_375/' + getFileName(item.file_url)),
+        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
+        previewUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
         originalUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/' + getFileName(item.file_url))
       };
     case 'document':
@@ -609,8 +723,8 @@ src_sources_private_mappers_item = function (normalizeUri, mappers) {
     case 'picture':
     case 'site_icon':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_srz_210_210_75_22_0.5_1.20_0.00_jpg_srz'),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_srb_375_375_75_22_0.5_1.20_0.00_jpg_srb'),
+        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_srz'),
+        previewUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_srb'),
         originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'document':
@@ -648,7 +762,17 @@ src_sources_private_mappers_item = function (normalizeUri, mappers) {
       };
     }
   };
-  return function (itemData, settings) {
+  return function (itemData, settings, thumbnailSizes) {
+    function insertSizes(compiledUrls) {
+      Object.keys(thumbnailSizes).forEach(function (thumbType) {
+        var compiledUrlKey = thumbType + 'Url', thumbSizeData = utils.extend({}, thumbnailSizes[thumbType]);
+        if (settings.imageOperationsApi === 'vangogh') {
+          thumbSizeData.mode = utils.transformModeToVangogh(thumbSizeData.mode);
+        }
+        compiledUrls[compiledUrlKey] = utils.insertDataInTemplate(compiledUrls[compiledUrlKey], thumbSizeData);
+      });
+      return compiledUrls;
+    }
     var item = {
       id: itemData.file_name,
       folderId: itemData.parent_folder_id || null,
@@ -663,24 +787,23 @@ src_sources_private_mappers_item = function (normalizeUri, mappers) {
       fileInput: mappers.toObject(itemData.file_input),
       fileOutput: mappers.toObject(itemData.file_output)
     };
-    item.thumbnailUrl = compileUrls(itemData, settings).thumbnailUrl;
-    item.originalUrl = compileUrls(itemData, settings).originalUrl;
-    item.previewUrl = compileUrls(itemData, settings).previewUrl;
+    thumbnailSizes = utils.extend(settings.thumbnailSizes, thumbnailSizes);
+    item = utils.extend(item, insertSizes(compileUrls(itemData, settings)));
     return item;
   };
-}(src_utils_normalize_uri, src_utils_mappers);
+}(src_utils_normalize_uri, src_utils_mappers, src_utils_utils);
 src_sources_private_items = function (Promise, http, normalizeUri, utils, toItem, toError) {
   
   return function (settings) {
     function failHandler(reason) {
       return toError(reason);
     }
-    function toItemsList(res) {
-      if (!res.data.files || !res.data.files.length) {
+    function toItemsList(res, thumbnailSizes) {
+      if (!res.data.files) {
         return [];
       }
       return res.data.files.map(function (item) {
-        return toItem(item, settings);
+        return toItem(item, settings, thumbnailSizes);
       });
     }
     var defaultPaging = {
@@ -697,12 +820,43 @@ src_sources_private_items = function (Promise, http, normalizeUri, utils, toItem
       var paging = utils.extend(defaultPaging, options.paging);
       var queryParams = {
         page_size: paging.size,
-        cursor: options.cursor,
+        cursor: paging.cursor,
         parent_folder_id: folderId,
         media_type: options.mediaType
       };
       queryParams.order = sort.direction === 'desc' ? '-' + sort.order : sort.order;
       return http.get(settings.apiUrl + '/files/getpage', queryParams, { withCredentials: true }).then(function (response) {
+        return {
+          data: toItemsList(response, options.thumbnails),
+          paging: {
+            size: paging.size,
+            cursor: response.data.cursor
+          }
+        };
+      }).catch(failHandler);
+    }
+    function removeItem(itemId) {
+      return http.post(settings.apiUrl + '/files/' + itemId + '/delete', null, { withCredentials: true }).then(function () {
+        return itemId;
+      }).catch(failHandler);
+    }
+    function remove(itemsId) {
+      return itemsId.map(removeItem);
+    }
+    function searchByTag(tag, options) {
+      options = options || {};
+      var sort = utils.extend(defaultSort, options.sort);
+      var paging = utils.extend(defaultPaging, options.paging);
+      var queryParams = {
+        page_size: paging.size,
+        cursor: paging.cursor,
+        media_type: options.mediaType,
+        order: sort.direction === 'desc' ? '-' + sort.order : sort.order
+      };
+      return http.get(settings.apiUrl + '/files/get?tag=' + tag, queryParams, {
+        withCredentials: true,
+        cache: false
+      }).then(function (response) {
         return {
           data: toItemsList(response),
           paging: {
@@ -710,25 +864,30 @@ src_sources_private_items = function (Promise, http, normalizeUri, utils, toItem
             cursor: response.data.cursor
           }
         };
-      }, failHandler);
-    }
-    function removeItem(itemId) {
-      return http.post(settings.apiUrl + '/files/' + itemId + '/delete', null, { withCredentials: true }).then(function () {
-        return itemId;
-      }, failHandler);
-    }
-    function remove(itemsId) {
-      return itemsId.map(removeItem);
+      }).catch(failHandler);
     }
     return {
       list: list,
-      remove: remove
+      remove: remove,
+      searchByTag: searchByTag
     };
   };
 }(bluebird, src_utils_http, src_utils_normalize_uri, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error);
-src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem, toError, validateNewProps) {
+src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem, toError, validateNewProps, mappers) {
   
   return function (settings) {
+    var uploadProgressEvents = [];
+    function getFilesSizeLimit(mediaType) {
+      return settings.uploadLimits[utils.snakeToCamel(mediaType)];
+    }
+    function fileSizeIsInvalid(fileSource) {
+      return fileSource.file.size >= getFilesSizeLimit(fileSource.mediaType);
+    }
+    function onItemUploadProgress(callback) {
+      if (typeof callback === 'function') {
+        uploadProgressEvents.push(callback);
+      }
+    }
     function failHandler(reason) {
       return toError(reason);
     }
@@ -748,40 +907,43 @@ src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem,
         content_type: fileSource.file.type
       }, { withCredentials: true });
     }
-    function uploadByUrl(file, options) {
-      options = options || {};
+    function uploadByUrl(fileSource) {
       var params = {
-        url: normalizeUri(file.url),
-        media_type: file.mediaType,
-        name: file.name || 'Untitled',
-        tags: file.tags || null,
-        parent_folder_id: options.folderId || null
+        url: encodeURIComponent(normalizeUri(fileSource.url)),
+        media_type: fileSource.mediaType,
+        name: fileSource.name || 'Untitled',
+        tags: fileSource.tags || null,
+        parent_folder_id: fileSource.folderId || null
       };
-      return new Promise(function (resolve, reject) {
-        http.post(settings.apiUrl + '/files/upload/external?url=' + params.url + '&media_type=' + params.media_type, params, { withCredentials: true }).then(function (response) {
-          resolve(toItem(response.data, settings));
-        }, reject);
+      var apiUrl = settings.apiUrl + '/files/upload/external?url=' + params.url + '&media_type=' + params.media_type;
+      var uploadPromise = http.post(apiUrl, params, { withCredentials: true }).progress(function (progress) {
+        uploadPromise.notify(progress);
+      }).then(function (response) {
+        return toItem(response.data, settings);
       });
+      return uploadPromise;
     }
-    function upload(fileSource, options) {
-      options = options || {};
+    function upload(fileSource) {
       var fileToUpload = {
-        parent_folder_id: options.folderId || null,
+        parent_folder_id: fileSource.folderId || null,
         file: fileSource.file,
         media_type: fileSource.mediaType
       };
-      var wrapperPromise = new Promise(function (resolve, reject) {
-        getUploadUrl(fileSource).then(function (response) {
-          var uploadPromise = http.upload(response.data.upload_url, fileToUpload, { withCredentials: true });
-          uploadPromise.progress(function (progress) {
-            wrapperPromise.notify(progress);
-          });
-          uploadPromise.then(function (response) {
-            resolve(toItem(response.data[0], settings));
-          }, reject);
-        }, reject);
+      if (fileSizeIsInvalid(fileSource)) {
+        return Promise.reject(mappers.toError({
+          status: -406,
+          statusText: 'Not Acceptable',
+          data: { error_description: 'File size is bigger than ' + utils.bytesToSize(getFilesSizeLimit(fileSource.mediaType)) }
+        }));
+      }
+      var uploadPromiseChain = getUploadUrl(fileSource).then(function (response) {
+        return http.upload(response.data.upload_url, fileToUpload, { withCredentials: true }).progress(function (progress) {
+          uploadPromiseChain.notify(progress);
+        });
+      }).then(function (response) {
+        return toItem(response.data[0], settings);
       });
-      return wrapperPromise;
+      return uploadPromiseChain;
     }
     function get(itemId) {
       return http.get(settings.apiUrl + '/files/' + itemId, null, {
@@ -794,32 +956,56 @@ src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem,
     function update(item, newItemProps) {
       var arePropsValid = validateNewProps(newItemProps);
       if (arePropsValid.valid === false) {
-        return failHandler({
+        return failHandler(mappers.toError({
           status: -200,
           statusText: 'Internal JS Error',
           data: { message: arePropsValid.message }
-        });
+        }));
       }
+      newItemProps.tags = newItemProps.tags || item.tags || [];
+      var newTags = newItemProps.tags.join(',');
       return http.post(settings.apiUrl + '/files/' + item.id + '/put', {
         original_file_name: newItemProps.name,
-        parent_folder_id: newItemProps.folderId
+        parent_folder_id: newItemProps.folderId,
+        tags: newTags
       }, { withCredentials: true }).then(function (res) {
         res.data = utils.merge(item, newItemProps);
         return res;
       }, failHandler);
     }
     return {
+      onItemUploadProgress: onItemUploadProgress,
       upload: upload,
       uploadByUrl: uploadByUrl,
       get: get,
       update: update
     };
   };
-}(bluebird, src_utils_http, src_utils_utils, src_utils_normalize_uri, src_sources_private_mappers_item, src_sources_private_parsers_error, src_sources_private_validators_new_props);
+}(bluebird, src_utils_http, src_utils_utils, src_utils_normalize_uri, src_sources_private_mappers_item, src_sources_private_parsers_error, src_sources_private_validators_new_props, src_utils_mappers);
 src_sources_private_settings = {
   apiUrl: 'http://files.wix.com',
   imageOperationsApi: 'vangogh',
-  filesUrl: 'http://static.wixstatic.com'
+  filesUrl: 'http://static.wixstatic.com',
+  uploadLimits: {
+    default: 15728640,
+    document: 15728640,
+    picture: 15728640,
+    music: 52428800,
+    video: 524288000,
+    secureMusic: 157286400
+  },
+  thumbnailSizes: {
+    thumbnail: {
+      width: 210,
+      height: 210,
+      mode: 'fill'
+    },
+    preview: {
+      width: 375,
+      height: 375,
+      mode: 'fit'
+    }
+  }
 };
 src_sources_decorators = function (Promise, notifier, utils) {
   
@@ -891,7 +1077,8 @@ src_events_list = {
     SEARCH: 'items.search',
     REMOVE: 'items.remove',
     UPLOAD: 'items.upload',
-    UPLOAD_BY_URL: 'items.uploadByUrl'
+    UPLOAD_BY_URL: 'items.uploadByUrl',
+    SEARCH_BY_TAG: 'items.searchByTag'
   },
   ITEM: {
     GET: 'item.get',
@@ -901,83 +1088,17 @@ src_events_list = {
     UPLOAD_BY_URL: 'item.uploadByUrl'
   }
 };
-src_services_upload_collection = function (Promise) {
-  
-  return function (source) {
-    var uploadQueue = [];
-    var uploadIsInProgress = false;
-    var dynamicPromiseReduce = function (itemsToUpload, callback) {
-      var currentItem = itemsToUpload.shift();
-      console.log(currentItem);
-      if (!currentItem) {
-        uploadIsInProgress = false;
-        return;
-      }
-      callback(currentItem).finally(function () {
-        dynamicPromiseReduce(itemsToUpload, callback);
-      });
-    };
-    function defer() {
-      var resolve, reject;
-      var promise = new Promise(function () {
-        resolve = arguments[0];
-        reject = arguments[1];
-      });
-      return {
-        resolve: resolve,
-        reject: reject,
-        promise: promise
-      };
-    }
-    function startUpload(items, options, uploadFn) {
-      var mapped = items.map(function (item) {
-        var deferred = defer();
-        uploadQueue.push({
-          item: item,
-          deferred: deferred
-        });
-        return deferred;
-      });
-      if (!uploadIsInProgress) {
-        uploadIsInProgress = true;
-        dynamicPromiseReduce(uploadQueue, function (itemToUpload) {
-          return uploadFn(itemToUpload.item, options).progress(function (progress) {
-            itemToUpload.deferred.promise.notify(progress);
-          }).then(itemToUpload.deferred.resolve, itemToUpload.deferred.reject);
-        });
-      }
-      return mapped.map(function (item) {
-        return item.promise;
-      });
-    }
-    function upload(items, options) {
-      return startUpload(items, options, source.item.upload);
-    }
-    function uploadByUrl(items, options) {
-      return startUpload(items, options, source.item.uploadByUrl);
-    }
-    this.upload = upload;
-    this.uploadByUrl = uploadByUrl;
-  };
-}(bluebird);
-src_sources_private_Private = function (initFolders, initFolder, initItems, initItem, defaultSettings, utils, decorators, eventsList, Uploader) {
+src_sources_private_Private = function (initFolders, initFolder, initItems, initItem, defaultSettings, utils, decorators, eventsList) {
   
   return function (userSettings) {
     var settings = utils.extend({}, defaultSettings, userSettings), folders = initFolders(settings), folder = initFolder(settings), items = initItems(settings), item = initItem(settings);
-    var uploadCollection = new Uploader(this);
-    utils.extend(items, {
-      upload: uploadCollection.upload,
-      uploadByUrl: uploadCollection.uploadByUrl
-    });
     this.name = 'private';
     this.folders = decorators.addEvents(this, eventsList.FOLDERS, folders);
     this.folder = decorators.addEvents(this, eventsList.FOLDER, folder);
-    this.items = decorators.addEvents(this, eventsList.ITEMS, items);
     this.item = decorators.addEvents(this, eventsList.ITEM, item);
     this.items = decorators.addEvents(this, eventsList.ITEMS, items);
-    this.item = decorators.addEvents(this, eventsList.ITEM, item);
   };
-}(src_sources_private_folders, src_sources_private_folder, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_utils_utils, src_sources_decorators, src_events_list, src_services_upload_collection);
+}(src_sources_private_folders, src_sources_private_folder, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_utils_utils, src_sources_decorators, src_events_list);
 src_sources_picasa_settings = { apiUrl: 'http://pix-test.wix.com/services/google' };
 src_sources_picasa_mappers_folder = function (data) {
   return {
@@ -995,12 +1116,12 @@ src_sources_picasa_parsers_folders = function (toFolder) {
     return { data: data.feed.entry.map(toFolder) };
   };
 }(src_sources_picasa_mappers_folder);
-src_sources_picasa_parsers_error = function (Promise, mappers) {
+src_sources_picasa_parsers_error = function (Promise) {
   
   return function (response) {
-    return Promise.reject(mappers.toError(response));
+    return Promise.reject(response);
   };
-}(bluebird, src_utils_mappers);
+}(bluebird);
 src_sources_picasa_folders = function (http, toFolders, toError) {
   
   return function (settings) {
@@ -1014,7 +1135,7 @@ src_sources_picasa_folders = function (http, toFolders, toError) {
       return http.get(settings.apiUrl + '/albums', {
         thumbsize: '150c',
         'max-results': 500
-      }, { withCredentials: true }).then(successHandler, failHandler);
+      }, { withCredentials: true }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1120,19 +1241,19 @@ src_sources_instagram_parsers_folders = function (toFolder) {
     return { data: [toFolder(data)] };
   };
 }(src_sources_instagram_mappers_folder);
-src_sources_instagram_parsers_error = function (Promise, mappers) {
+src_sources_instagram_parsers_error = function (Promise) {
   
   return function (response) {
-    if (response.status === 500) {
-      response.status = 403;
+    if (response.code === 500) {
+      response.code = 403;
       response.data = {
         message: 'Unauthorized',
         result: 'error'
       };
     }
-    return Promise.reject(mappers.toError(response));
+    return Promise.reject(response);
   };
-}(bluebird, src_utils_mappers);
+}(bluebird);
 src_sources_instagram_folders = function (http, toFolders, toError) {
   
   return function (settings) {
@@ -1229,15 +1350,15 @@ src_sources_facebook_parsers_folders = function (toFolder) {
     return { data: data.data.map(toFolder) };
   };
 }(src_sources_facebook_mappers_folder);
-src_sources_facebook_parsers_error = function (Promise, mappers) {
+src_sources_facebook_parsers_error = function (Promise) {
   
   return function (response) {
-    if (response.status === 400 && response.data.error.code === 190) {
-      response.status = 403;
+    if (response.code === 400 && response.data.code === 190) {
+      response.code = 403;
     }
-    return Promise.reject(mappers.toError(response));
+    return Promise.reject(response);
   };
-}(bluebird, src_utils_mappers);
+}(bluebird);
 src_sources_facebook_folders = function (http, toFolders, toError) {
   
   return function (settings) {
@@ -1355,12 +1476,12 @@ src_sources_flickr_parsers_folders = function (toFolder) {
     return { data: data.photosets.photoset.map(toFolder) };
   };
 }(src_sources_flickr_mappers_folder);
-src_sources_flickr_parsers_error = function (Promise, mappers) {
+src_sources_flickr_parsers_error = function (Promise) {
   
   return function (response) {
-    return Promise.reject(mappers.toError(response));
+    return Promise.reject(response);
   };
-}(bluebird, src_utils_mappers);
+}(bluebird);
 src_sources_flickr_folders = function (http, toFolders, toError) {
   
   return function (settings) {
@@ -1420,9 +1541,6 @@ src_sources_flickr_items = function (http, toItems, toError) {
   
   return function (settings) {
     function successHandler(response) {
-      if (response.data.stat === 'fail') {
-        return toError(response);
-      }
       return toItems(response.data);
     }
     function failHandler(reason) {
@@ -1437,7 +1555,7 @@ src_sources_flickr_items = function (http, toItems, toError) {
         per_page: options.paging.pageSize || 50,
         page: options.paging.cursor || null
       };
-      return http.get(settings.apiUrl + '/photoset', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.apiUrl + '/photoset', requestOptions, { withCredentials: true }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1512,7 +1630,7 @@ src_connector_connector = function (Promise, connectorSettings, http, utils) {
     }
     function disconnect() {
       localStorage.removeItem(settings.parameterName);
-      http.get(settings.disconnectUrl, null, { withCredentials: true });
+      return http.get(settings.disconnectUrl, null, { withCredentials: true });
     }
     function connect() {
       var promise;
@@ -1587,16 +1705,28 @@ src_services_bi_events_ids = {
 };
 src_services_bi_request = function (BIEventIds, utils) {
   
-  var getBaseHost, error, report, benchmark, send, getCurrentTime, notifyResponseTime, benchmarkRequest;
-  send = function (url, data) {
+  function send(url, data) {
     var biImage = document.createElement('img');
     biImage.setAttribute('src', url + '?' + utils.encodeParams(data));
     biImage = null;
-  };
-  getCurrentTime = function () {
+  }
+  function getCurrentTime() {
     return new Date().getTime();
-  };
-  notifyResponseTime = function (adapter, eventName, data) {
+  }
+  function getBaseHost() {
+    return 'http://frog.wixpress.com';  //return settings.biNotifications || (/\.wixpress\.com/i.test(settings.baseHost || document.location.host) ? 'http://frog.wix.com' : 'http://frog.wixpress.com');
+  }
+  function benchmark(data) {
+    return send(getBaseHost() + '/mg', {
+      evid: BIEventIds.BIEventsIds.responseTime,
+      call_name: data.requestName || '',
+      ts: data.responseTime || 0,
+      result: data.isSuccess ? 'success' : 'fail',
+      response_speed: Math.floor(data.responseSize || 0 / (data.responseTime / 1000)),
+      response_size: data.responseSize
+    });
+  }
+  function notifyResponseTime(adapter, eventName, data) {
     var requestName = adapter.name + '(' + eventName + ')';
     var responseTime = getCurrentTime() - data.startedAt;
     //console.log('BI: [',requestName, '] ',responseTime, ' ms');
@@ -1606,10 +1736,10 @@ src_services_bi_request = function (BIEventIds, utils) {
       isSuccess: data.isSuccess,
       responseSize: data.responseSize
     });
-  };
-  benchmarkRequest = function (promise, params) {
+  }
+  function benchmarkRequest(promise, params) {
     var startedAt = getCurrentTime();
-    promise.then(function (result) {
+    promise.then(function () {
       notifyResponseTime(params.eventTarget, params.eventName, {
         startedAt: startedAt,
         responseSize: 0,
@@ -1622,18 +1752,15 @@ src_services_bi_request = function (BIEventIds, utils) {
         isSuccess: false
       });
     });
-  };
-  getBaseHost = function () {
-    return 'http://frog.wixpress.com';  //return settings.biNotifications || (/\.wixpress\.com/i.test(settings.baseHost || document.location.host) ? 'http://frog.wix.com' : 'http://frog.wixpress.com');
-  };
-  report = function (eventId, data) {
+  }
+  function report(eventId, data) {
     data.evid = eventId;
     //data = _.extend({
     //  evid: eventId
     //}, data);
     return send(getBaseHost() + '/mg', data);
-  };
-  error = function (adapterName, eventName, response) {
+  }
+  function error(adapterName, eventName, response) {
     var httpCode = response.code || '000', adapterCode = BIEventIds.BIAdaptersIds[adapterName] || '00', requestCode = BIEventIds.BIAdaptersRequestsIds[eventName] || '00', errorDesc = adapterName + ' ' + eventName + ': ' + response.message, errorCode = adapterCode + requestCode + httpCode;
     return send(getBaseHost() + '/trg', {
       src: 25,
@@ -1649,17 +1776,7 @@ src_services_bi_request = function (BIEventIds, utils) {
       httpc: httpCode || '000',
       dsc: errorDesc || ''
     });
-  };
-  benchmark = function (data) {
-    return send(getBaseHost() + '/mg', {
-      evid: BIEventIds.BIEventsIds.responseTime,
-      call_name: data.requestName || '',
-      ts: data.responseTime || 0,
-      result: data.isSuccess ? 'success' : 'fail',
-      response_speed: Math.floor(data.responseSize || 0 / (data.responseTime / 1000)),
-      response_size: data.responseSize
-    });
-  };
+  }
   return {
     report: report,
     error: error,
@@ -1676,7 +1793,7 @@ src_services_bi_bi = function (notifier, eventsList, sendRequest) {
       var sendError = function (adapter, eventName, response) {
         sendRequest.error(adapter.name, eventName, response);
       };
-      var reportSuccess = function (response) {
+      var reportSuccess = function () {
       };
       var reportError = function (response) {
         sendError(params.eventTarget, params.eventName, response);
@@ -1694,15 +1811,278 @@ src_services_bi_bi = function (notifier, eventsList, sendRequest) {
     });
   };
 }(src_events_notifier, src_events_list, src_services_bi_request);
-src_wixmp = function (Source, sources, events, externalSourceConnector, enableBI) {
+src_services_file_to_upload = function (Promise) {
+  
+  function canAbort(fileToUpload) {
+    return fileToUpload.status === 'waiting' || fileToUpload.status === 'uploading';
+  }
+  function abortEarly(fileToUpload) {
+    fileToUpload.status = 'failed';
+    fileToUpload.deferred.promise.catch(function (reason) {
+      fileToUpload.error = reason;
+    });
+    fileToUpload.deferred.promise.abort();
+  }
+  function initUpload(fileToUpload, data) {
+    fileToUpload.status = 'uploading';
+    fileToUpload.uploadPromise = data.uploadFn(fileToUpload.source).progress(function (progress) {
+      fileToUpload.deferred.promise.notify(progress);
+    }).then(function (res) {
+      fileToUpload.deferred.resolve(res);
+    }).catch(function (reason) {
+      fileToUpload.error = reason;
+      fileToUpload.deferred.reject(reason);
+    });
+  }
+  function createDeferred() {
+    var deferred = Promise.defer();
+    deferred.promise.catch(function (reason) {
+      console.log(reason);
+    });
+    deferred.promise.cancellable();
+    return deferred;
+  }
+  function map(data) {
+    return {
+      source: data.source,
+      status: 'waiting',
+      bytesLoaded: 0,
+      deferred: createDeferred(),
+      isAborted: false,
+      error: {},
+      upload: function () {
+        if (!this.isAborted) {
+          initUpload(this, data);
+        }
+        return this.deferred.promise;
+      },
+      abort: function () {
+        if (!canAbort(this)) {
+          return;
+        }
+        this.isAborted = true;
+        if (this.status === 'waiting') {
+          abortEarly(this);
+          return;
+        }
+        this.status = 'failed';
+        this.uploadPromise.abort();
+      },
+      canRetry: function () {
+        if (!this.error.code) {
+          return false;
+        }
+        var codesToRetry = [
+          -100,
+          -201,
+          -406
+        ];
+        if (this.status === 'failed' && codesToRetry.indexOf(this.error.code) !== -1) {
+          return true;
+        }
+        return false;
+      },
+      signUpForRetry: function () {
+        this.status = 'waiting';
+        this.isAborted = false;
+        this.error = {};
+        this.deferred = createDeferred();
+      },
+      canAbort: function () {
+        return canAbort(this);
+      }
+    };
+  }
+  return map;
+}(bluebird);
+src_services_upload_collection = function (Promise, fileToUploadMapper) {
+  
+  var uploadQueue = [];
+  var uploadIsInProgress = false;
+  var uploadQueueDeferred = Promise.defer();
+  var currentUploadingItemIdx = 0;
+  var currentUploadedTotal = 0;
+  var supportedEvents = [
+    'queueChanged',
+    'fileStatusChanged',
+    'uploadQueueStarted',
+    'uploadQueueFinished'
+  ];
+  var events = [];
+  function filterEvents(eventName) {
+    return function (event) {
+      return event.name === eventName;
+    };
+  }
+  function on(eventNames, callback) {
+    if (typeof eventNames === 'string') {
+      eventNames = [eventNames];
+    }
+    eventNames.forEach(function (eventName) {
+      if (supportedEvents.indexOf(eventName)) {
+        events.push({
+          name: eventName,
+          fn: callback
+        });
+      } else {
+        throw new Error('This event' + eventName + 'is not supported by multiple file uploader');
+      }
+    });
+  }
+  function emit(eventName, args) {
+    var __slice = [].slice;
+    args = arguments.length >= 2 ? __slice.call(arguments, 1) : [];
+    events.filter(filterEvents(eventName)).forEach(function (event) {
+      event.fn.apply({ event: eventName }, args);
+    });
+  }
+  function hasFilesToRetry() {
+    return uploadQueue.filter(function (fileToUpload) {
+      return fileToUpload.status === 'waiting';
+    }).length !== 0;
+  }
+  function hasRetryableFiles() {
+    return uploadQueue.some(function (fileToUpload) {
+      return fileToUpload.canRetry();
+    });
+  }
+  //TODO refactor dynamicPromiseReduce function
+  function dynamicPromiseReduce(itemsToUpload, callback) {
+    var currentItem = itemsToUpload[currentUploadingItemIdx];
+    if (currentItem && currentItem.status !== 'waiting') {
+      currentUploadingItemIdx++;
+      dynamicPromiseReduce(itemsToUpload, callback);
+      return uploadQueueDeferred.promise;
+    }
+    if (!currentItem && !hasFilesToRetry()) {
+      uploadIsInProgress = false;
+      currentUploadingItemIdx = 0;
+      uploadQueueDeferred.resolve();
+      return uploadQueueDeferred.promise;
+    } else if (!currentItem && hasFilesToRetry()) {
+      currentUploadingItemIdx = 0;
+      dynamicPromiseReduce(itemsToUpload, callback);
+      return uploadQueueDeferred.promise;
+    }
+    callback(currentItem).finally(function () {
+      currentUploadingItemIdx++;
+      dynamicPromiseReduce(itemsToUpload, callback);
+    });
+    return uploadQueueDeferred.promise;
+  }
+  function getFileSize(fileToUpload) {
+    return fileToUpload.source.file ? fileToUpload.source.file.size : 1;
+  }
+  function getBytesTotal() {
+    return uploadQueue.reduce(function (sum, fileToUpload) {
+      return sum + getFileSize(fileToUpload);
+    }, 0);
+  }
+  function calculateItemBytesLoaded(fileToUpload, progress) {
+    switch (progress.status) {
+    case 'uploading':
+      if (progress.loaded <= getFileSize(fileToUpload)) {
+        return progress.loaded;
+      }
+      return getFileSize(fileToUpload);
+    case 'succeeded':
+    case 'processing':
+      return getFileSize(fileToUpload);
+    case 'failed':
+      return 0;
+    default:
+      return 0;
+    }
+  }
+  function processItemProgress(item) {
+    return function (progress) {
+      item.status = progress.status;
+      item.bytesLoaded = progress.loaded;
+      progress.file = item;
+      emit('fileStatusChanged', {
+        bytesUploaded: currentUploadedTotal + calculateItemBytesLoaded(item, progress),
+        bytesTotal: getBytesTotal(),
+        currentFileProgress: progress,
+        currentFileQueueIdx: currentUploadingItemIdx
+      });
+    };
+  }
+  function uploadCurrentFile(fileToUpload) {
+    return fileToUpload.upload();
+  }
+  function signupUploadPromise(fileToUpload) {
+    var processCurrentItemProgress = processItemProgress(fileToUpload);
+    fileToUpload.deferred.promise.progress(processCurrentItemProgress).then(function () {
+      processCurrentItemProgress({
+        status: 'succeeded',
+        total: getFileSize(fileToUpload),
+        loaded: getFileSize(fileToUpload)
+      });
+      currentUploadedTotal += getFileSize(fileToUpload);
+    }).catch(function () {
+      processCurrentItemProgress({
+        status: 'failed',
+        total: getFileSize(fileToUpload),
+        loaded: 0
+      });
+    });
+  }
+  function startUploadQueue() {
+    emit('uploadQueueStarted', uploadQueue);
+    dynamicPromiseReduce(uploadQueue, uploadCurrentFile).finally(function () {
+      emit('uploadQueueFinished', uploadQueue);
+    });
+  }
+  function clearQueue() {
+    if (uploadIsInProgress) {
+      throw new Error('Upload queue can not be cleared while upload is running');
+    }
+    uploadQueue.length = 0;
+    currentUploadedTotal = 0;
+  }
+  function upload(fileSources) {
+    fileSources = fileSources || [];
+    if (!uploadIsInProgress && !hasRetryableFiles()) {
+      clearQueue();
+      uploadQueueDeferred = Promise.defer();
+    }
+    var mappedFiles = fileSources.map(fileToUploadMapper);
+    mappedFiles.forEach(function (fileToUpload) {
+      signupUploadPromise(fileToUpload);
+      var nativeRetry = fileToUpload.signUpForRetry;
+      fileToUpload.signUpForRetry = function () {
+        nativeRetry.apply(this, arguments);
+        signupUploadPromise(fileToUpload);
+        if (!uploadIsInProgress) {
+          uploadIsInProgress = true;
+          startUploadQueue();
+        }
+      };
+      uploadQueue.push(fileToUpload);
+    });
+    emit('queueChange', uploadQueue);
+    if (!uploadIsInProgress) {
+      uploadIsInProgress = true;
+      startUploadQueue();
+    }
+    return mappedFiles;
+  }
+  return {
+    on: on,
+    upload: upload,
+    clearQueue: clearQueue
+  };
+}(bluebird, src_services_file_to_upload);
+src_wixmp = function (Source, sources, events, externalSourceConnector, enableBI, Uploader) {
   
   return {
     Source: Source,
     sources: sources,
     events: events,
     bi: enableBI,
-    connectExternalSource: externalSourceConnector
+    connectExternalSource: externalSourceConnector,
+    Uploader: Uploader
   };
-}(src_sources_Source, src_sources_list, src_events_events, src_connector_connector, src_services_bi_bi);
+}(src_sources_Source, src_sources_list, src_events_events, src_connector_connector, src_services_bi_bi, src_services_upload_collection);
 window.wixmp = src_wixmp;
 }());
