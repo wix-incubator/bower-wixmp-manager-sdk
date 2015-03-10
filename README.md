@@ -7,7 +7,7 @@ sources such us
 * Private Media
 * External Sources (Flickr, Instagram, Picasa, and Facebook)
 
-You can get Folders and Items from any source, as well perform search and modifications. See [API](./API.md) for more information.
+You can get Folders and Items from any source, as well perform search and modifications. See [API](docs/API.md) for more information.
 
 ### Installation
 Wix Media Platform has only one hard dependency for Promises - [Bluebird](https://github.com/petkaantonov/bluebird)
@@ -15,14 +15,14 @@ Wix Media Platform has only one hard dependency for Promises - [Bluebird](https:
 In order to install the lib, run:
 
 ```bash 
-bower install wixmp-manager
+bower install wixmp-manager-sdk
 ```
     
 Then add the following lines to your `index.html` file:
 
 ```html
 <script src="bower_components/bluebird/js/browser/bluebird.js"></script>
-<script src="bower_components/wixmp-manager-sdk/dist/wixmp-manager.min.js"></script>
+<script src="bower_components/wixmp-manager-sdk/dist/wixmp-manager-sdk.min.js"></script>
 ```
 
 #### AMD
@@ -31,7 +31,7 @@ For the usage with `requirejs`, add the following code to the requirejs config
 ```js
 paths: {
   bluebird: 'bower_components/bluebird/js/browser/bluebird',
-  wixmp: 'bower_components/wixmp-manager-sdk/dist/wixmp-manager.amd'
+  wixmp: 'bower_components/wixmp-manager-sdk/dist/wixmp-manager-sdk.amd'
 }
 ```
 
