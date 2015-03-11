@@ -645,16 +645,14 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
 }(src_utils_http, src_utils_mappers, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
 src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
   
-  var compileUrls, rembrandtCompile, vangoghCompile;
-  compileUrls = function (item, settings) {
+  var compileUrlsTemplate, rembrandtCompile, vangoghCompile;
+  compileUrlsTemplate = function (item, settings) {
     if (settings.imageOperationsApi === 'rembrandt') {
       return rembrandtCompile.apply(this, arguments);
     }
     return vangoghCompile.apply(this, arguments);
   };
   rembrandtCompile = function (item, settings) {
-    var nameSanitizedFromExtension;
-    var preview;
     var regexp = /([^\/]+)$/;
     function cutNameFromId(id) {
       return id.replace(regexp, '');
@@ -666,112 +664,96 @@ src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
     case 'picture':
     case 'site_icon':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/' + getFileName(item.file_url))
+        thumbnail: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
+        original: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/' + getFileName(item.file_url))
       };
     case 'document':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'music':
     case 'secure_music':
       return {
-        thumbnailUrl: './images/music-preview.png',
-        previewUrl: './images/music-preview.png',
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: './images/music-preview.png',
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'video':
-      preview = item.icon_url ? normalizeUri(settings.filesUrl + '/' + item.icon_url) : './images/video-preview.png';
       return {
-        thumbnailUrl: preview,
-        previewUrl: preview,
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: item.icon_url ? normalizeUri(settings.filesUrl + '/' + item.icon_url) : './images/video-preview.png',
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'ufonts':
-      nameSanitizedFromExtension = item.file_name.replace(/\..*/, '');
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/media' + nameSanitizedFromExtension + '_prvw.jpg'),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        preview: normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg'),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'swf':
       return {
-        thumbnailUrl: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        previewUrl: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'watermark':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     default:
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     }
   };
   vangoghCompile = function (item, settings) {
-    var nameSanitizedFromExtension;
     switch (item.media_type) {
     case 'picture':
     case 'site_icon':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_srz'),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_srb'),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_#mode#'),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'document':
     case 'music':
     case 'secure_music':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'ufonts':
-      nameSanitizedFromExtension = item.file_name.replace(/\..*/, '');
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/media' + nameSanitizedFromExtension + '_prvw.jpg'),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        preview: normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg'),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'swf':
       return {
-        thumbnailUrl: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        previewUrl: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     case 'watermark':
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     default:
       return {
-        thumbnailUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        previewUrl: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        originalUrl: normalizeUri(settings.filesUrl + '/' + item.file_url)
+        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
+        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
       };
     }
   };
   return function (itemData, settings, thumbnailSizes) {
-    function insertSizes(compiledUrls) {
-      Object.keys(thumbnailSizes).forEach(function (thumbType) {
-        var compiledUrlKey = thumbType + 'Url', thumbSizeData = utils.extend({}, thumbnailSizes[thumbType]);
+    function insertSizes(urlsTemplate) {
+      return Object.keys(thumbnailSizes).reduce(function (compiledUrls, thumbType) {
+        var compiledUrlKey = thumbType + 'Url', thumbSizeData = utils.extend({}, thumbnailSizes[thumbType]), urlTemplate = urlsTemplate[thumbType] || urlsTemplate.thumbnail;
         if (settings.imageOperationsApi === 'vangogh') {
           thumbSizeData.mode = utils.transformModeToVangogh(thumbSizeData.mode);
         }
-        compiledUrls[compiledUrlKey] = utils.insertDataInTemplate(compiledUrls[compiledUrlKey], thumbSizeData);
-      });
-      return compiledUrls;
+        compiledUrls[compiledUrlKey] = utils.insertDataInTemplate(urlTemplate, thumbSizeData);
+        return compiledUrls;
+      }, {});
     }
     var item = {
       id: itemData.file_name,
@@ -788,7 +770,7 @@ src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
       fileOutput: mappers.toObject(itemData.file_output)
     };
     thumbnailSizes = utils.extend(settings.thumbnailSizes, thumbnailSizes);
-    item = utils.extend(item, insertSizes(compileUrls(itemData, settings)));
+    item = utils.extend(item, insertSizes(compileUrlsTemplate(itemData, settings)));
     return item;
   };
 }(src_utils_normalize_uri, src_utils_mappers, src_utils_utils);
@@ -1003,6 +985,11 @@ src_sources_private_settings = {
     preview: {
       width: 375,
       height: 375,
+      mode: 'fit'
+    },
+    original: {
+      width: 1000,
+      height: 1000,
       mode: 'fit'
     }
   }
