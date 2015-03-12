@@ -3,7 +3,7 @@ var bluebird_original = window.Promise;
 if (window.Promise !== window.P) {
 console.warn('Bluebird is not available, cancel and progress will not work');
 }
-var bluebird, src_utils_normalize_uri, src_utils_utils, src_utils_mappers, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_sources_decorators, src_events_list, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_services_file_to_upload, src_services_upload_collection, src_wixmp;
+var bluebird, src_utils_utils, src_utils_mappers, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_sources_decorators, src_events_list, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_services_file_to_upload, src_services_upload_collection, src_wixmp;
 (function (e) {
   if (typeof exports === 'object' && typeof module !== 'undefined') {
     module.exports = e(P);
@@ -47,12 +47,6 @@ var bluebird, src_utils_normalize_uri, src_utils_utils, src_utils_mappers, src_u
   };
   return Promise;
 }));
-src_utils_normalize_uri = function (uri) {
-  if (typeof uri !== 'string') {
-    throw new Error('URI is not a string');
-  }
-  return uri.replace(/([a-z\-_0-9]+)\/\//gi, '$1/');
-};
 src_utils_utils = function () {
   
   function minMaxFinder(method, arr, predicate) {
@@ -177,6 +171,21 @@ src_utils_utils = function () {
         fit: 'srb'
       };
       return vangoghModes[mode];
+    },
+    splitTags: function (tags) {
+      if (!tags) {
+        return [];
+      }
+      if (Array.isArray(tags)) {
+        return tags;
+      }
+      return tags.split(/\s*,\s*/);
+    },
+    normalizeUri: function (uri) {
+      if (typeof uri !== 'string') {
+        throw new Error('URI is not a string');
+      }
+      return uri.replace(/([a-z\-_0-9]+)\/\//gi, '$1/');
     }
   };
   utils.min = utils.partial(minMaxFinder, 'min');
@@ -207,7 +216,7 @@ src_utils_mappers = {
     };
   }
 };
-src_utils_http = function (Promise, normalizeUri, utils, mappers) {
+src_utils_http = function (Promise, utils, mappers) {
   
   var post, get, upload, openRequest, encode, buildUrl, parseRequest, parseResponse, wrapRequestWithPromise, defaultOptions;
   defaultOptions = {
@@ -336,7 +345,7 @@ src_utils_http = function (Promise, normalizeUri, utils, mappers) {
     if (options.cache === false) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
     }
-    request.open(method.toUpperCase(), normalizeUri(url));
+    request.open(method.toUpperCase(), utils.normalizeUri(url));
     request.responseType = options.responseType;
     request.withCredentials = options.withCredentials;
     //request.withCredentials = true;
@@ -384,7 +393,7 @@ src_utils_http = function (Promise, normalizeUri, utils, mappers) {
     post: post,
     upload: upload
   };
-}(bluebird, src_utils_normalize_uri, src_utils_utils, src_utils_mappers);
+}(bluebird, src_utils_utils, src_utils_mappers);
 src_events_notifier = function (Promise) {
   
   var listeners = {};
@@ -643,9 +652,9 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
     };
   };
 }(src_utils_http, src_utils_mappers, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
-src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
+src_sources_private_mappers_item = function (mappers, utils) {
   
-  var compileUrlsTemplate, rembrandtCompile, vangoghCompile;
+  var compileUrlsTemplate, rembrandtCompile, vangoghCompile, normalizeUri = utils.normalizeUri;
   compileUrlsTemplate = function (item, settings) {
     if (settings.imageOperationsApi === 'rembrandt') {
       return rembrandtCompile.apply(this, arguments);
@@ -762,7 +771,7 @@ src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
       mediaType: itemData.media_type,
       fileUrl: normalizeUri(itemData.file_url),
       createdAt: itemData.created_ts,
-      tags: itemData.tags,
+      tags: utils.splitTags(itemData.tags),
       width: itemData.width || null,
       height: itemData.height || null,
       fileInfo: mappers.toObject(itemData.file_info),
@@ -773,8 +782,8 @@ src_sources_private_mappers_item = function (normalizeUri, mappers, utils) {
     item = utils.extend(item, insertSizes(compileUrlsTemplate(itemData, settings)));
     return item;
   };
-}(src_utils_normalize_uri, src_utils_mappers, src_utils_utils);
-src_sources_private_items = function (Promise, http, normalizeUri, utils, toItem, toError) {
+}(src_utils_mappers, src_utils_utils);
+src_sources_private_items = function (Promise, http, utils, toItem, toError) {
   
   return function (settings) {
     function failHandler(reason) {
@@ -854,8 +863,8 @@ src_sources_private_items = function (Promise, http, normalizeUri, utils, toItem
       searchByTag: searchByTag
     };
   };
-}(bluebird, src_utils_http, src_utils_normalize_uri, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error);
-src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem, toError, validateNewProps, mappers) {
+}(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error);
+src_sources_private_item = function (Promise, http, utils, toItem, toError, validateNewProps, mappers) {
   
   return function (settings) {
     var uploadProgressEvents = [];
@@ -891,10 +900,10 @@ src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem,
     }
     function uploadByUrl(fileSource) {
       var params = {
-        url: encodeURIComponent(normalizeUri(fileSource.url)),
+        url: encodeURIComponent(utils.normalizeUri(fileSource.url)),
         media_type: fileSource.mediaType,
         name: fileSource.name || 'Untitled',
-        tags: fileSource.tags || null,
+        tags: (fileSource.tags || []).join(',') || null,
         parent_folder_id: fileSource.folderId || null
       };
       var apiUrl = settings.apiUrl + '/files/upload/external?url=' + params.url + '&media_type=' + params.media_type;
@@ -963,7 +972,7 @@ src_sources_private_item = function (Promise, http, utils, normalizeUri, toItem,
       update: update
     };
   };
-}(bluebird, src_utils_http, src_utils_utils, src_utils_normalize_uri, src_sources_private_mappers_item, src_sources_private_parsers_error, src_sources_private_validators_new_props, src_utils_mappers);
+}(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error, src_sources_private_validators_new_props, src_utils_mappers);
 src_sources_private_settings = {
   apiUrl: 'http://files.wix.com',
   imageOperationsApi: 'vangogh',
@@ -1127,7 +1136,7 @@ src_sources_picasa_folders = function (http, toFolders, toError) {
     return { list: list };
   };
 }(src_utils_http, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error);
-src_sources_picasa_mappers_item = function (normalizeUri) {
+src_sources_picasa_mappers_item = function (utils) {
   
   function getLastImage(mediaGroup) {
     var images = mediaGroup.media$thumbnail.filter(function (item) {
@@ -1153,16 +1162,16 @@ src_sources_picasa_mappers_item = function (normalizeUri) {
       id: data.id.$t,
       name: data.summary.$t || data.title.$t,
       mediaType: 'picture',
-      fileUrl: normalizeUri(bigImage),
-      thumbnailUrl: normalizeUri(lastImage),
-      previewUrl: normalizeUri(preview),
+      fileUrl: utils.normalizeUri(bigImage),
+      thumbnailUrl: utils.normalizeUri(lastImage),
+      previewUrl: utils.normalizeUri(preview),
       createdAt: data.published.$t,
       tags: [],
       width: width,
       height: height
     };
   };
-}(src_utils_normalize_uri);
+}(src_utils_utils);
 src_sources_picasa_parsers_items = function (toItem) {
   
   return function (data) {
@@ -1256,7 +1265,7 @@ src_sources_instagram_folders = function (http, toFolders, toError) {
     return { list: list };
   };
 }(src_utils_http, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error);
-src_sources_instagram_mappers_item = function (normalizeUri) {
+src_sources_instagram_mappers_item = function (utils) {
   
   return function (data) {
     if (!data.caption) {
@@ -1266,16 +1275,16 @@ src_sources_instagram_mappers_item = function (normalizeUri) {
       id: data.id,
       name: data.caption.text,
       mediaType: 'picture',
-      fileUrl: normalizeUri(data.images.standard_resolution.url),
-      thumbnailUrl: normalizeUri(data.images.low_resolution.url),
-      previewUrl: normalizeUri(data.images.standard_resolution.url),
+      fileUrl: utils.normalizeUri(data.images.standard_resolution.url),
+      thumbnailUrl: utils.normalizeUri(data.images.low_resolution.url),
+      previewUrl: utils.normalizeUri(data.images.standard_resolution.url),
       createdAt: +data.created_time * 1000,
-      tags: data.tags,
+      tags: utils.splitTags(data.tags),
       width: data.images.standard_resolution.width,
       height: data.images.standard_resolution.height
     };
   };
-}(src_utils_normalize_uri);
+}(src_utils_utils);
 src_sources_instagram_parsers_items = function (toItem) {
   
   return function (data) {
@@ -1361,7 +1370,7 @@ src_sources_facebook_folders = function (http, toFolders, toError) {
     return { list: list };
   };
 }(src_utils_http, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error);
-src_sources_facebook_mappers_item = function (normalizeUri, utils) {
+src_sources_facebook_mappers_item = function (utils) {
   
   function findThumbnailUrl(images, minWidth, minHeight) {
     minHeight = minHeight || 190;
@@ -1390,16 +1399,16 @@ src_sources_facebook_mappers_item = function (normalizeUri, utils) {
       folderId: null,
       name: data.name || '',
       mediaType: 'picture',
-      fileUrl: normalizeUri(data.source),
-      thumbnailUrl: normalizeUri(findThumbnailUrl(data.images)),
-      previewUrl: normalizeUri(data.source),
+      fileUrl: utils.normalizeUri(data.source),
+      thumbnailUrl: utils.normalizeUri(findThumbnailUrl(data.images)),
+      previewUrl: utils.normalizeUri(data.source),
       createdAt: data.created_time,
       tags: [],
       width: data.width,
       height: data.height
     };
   };
-}(src_utils_normalize_uri, src_utils_utils);
+}(src_utils_utils);
 src_sources_facebook_parsers_items = function (toItem) {
   
   return function (data) {
@@ -1484,7 +1493,7 @@ src_sources_flickr_folders = function (http, toFolders, toError) {
     return { list: list };
   };
 }(src_utils_http, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error);
-src_sources_flickr_mappers_item = function (normalizeUri) {
+src_sources_flickr_mappers_item = function (utils) {
   
   function toThumbnails(photo) {
     var thumbnail = photo.url_m || photo.url_s || photo.url_t, big = photo.url_b || thumbnail, original = photo.url_o || big;
@@ -1501,16 +1510,16 @@ src_sources_flickr_mappers_item = function (normalizeUri) {
       name: data.title,
       folderId: null,
       mediaType: 'picture',
-      fileUrl: normalizeUri(thumbnails.fileUrl),
-      thumbnailUrl: normalizeUri(thumbnails.thumbnailUrl),
-      previewUrl: normalizeUri(thumbnails.previewUrl),
+      fileUrl: utils.normalizeUri(thumbnails.fileUrl),
+      thumbnailUrl: utils.normalizeUri(thumbnails.thumbnailUrl),
+      previewUrl: utils.normalizeUri(thumbnails.previewUrl),
       createdAt: null,
       tags: [],
       width: +(data.width_o || data.width_m || data.width_s || data.width_t),
       height: +(data.height_o || data.height_m || data.height_s || data.height_t)
     };
   };
-}(src_utils_normalize_uri);
+}(src_utils_utils);
 src_sources_flickr_parsers_items = function (toItem) {
   
   return function (data) {
