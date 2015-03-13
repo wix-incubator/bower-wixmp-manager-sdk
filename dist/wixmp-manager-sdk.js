@@ -654,105 +654,85 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
 }(src_utils_http, src_utils_mappers, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
 src_sources_private_mappers_item = function (mappers, utils) {
   
-  var compileUrlsTemplate, rembrandtCompile, vangoghCompile, normalizeUri = utils.normalizeUri;
-  compileUrlsTemplate = function (item, settings) {
-    if (settings.imageOperationsApi === 'rembrandt') {
-      return rembrandtCompile.apply(this, arguments);
-    }
-    return vangoghCompile.apply(this, arguments);
-  };
-  rembrandtCompile = function (item, settings) {
+  var normalizeUri = utils.normalizeUri;
+  function rembrandtCompile(item, settings, doNotCutNameFromId) {
     var regexp = /([^\/]+)$/;
     function cutNameFromId(id) {
+      if (doNotCutNameFromId) {
+        return id;
+      }
       return id.replace(regexp, '');
     }
     function getFileName(id) {
       return regexp.exec(id)[1];
     }
+    var templates = { original: normalizeUri(settings.filesUrl + '/' + item.file_url) };
     switch (item.media_type) {
     case 'picture':
     case 'site_icon':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url)),
-        original: normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/' + getFileName(item.file_url))
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url));
+      break;
     case 'document':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     case 'music':
     case 'secure_music':
-      return {
-        thumbnail: './images/music-preview.png',
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = './images/music-preview.png';
+      break;
     case 'video':
-      return {
-        thumbnail: item.icon_url ? normalizeUri(settings.filesUrl + '/' + item.icon_url) : './images/video-preview.png',
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = item.icon_url ? normalizeUri(settings.filesUrl + '/' + item.icon_url) : './images/video-preview.png';
+      break;
     case 'ufonts':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        preview: normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg'),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      templates.preview = normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg');
+      break;
     case 'swf':
-      return {
-        thumbnail: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png');
+      break;
     case 'watermark':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     default:
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
     }
-  };
-  vangoghCompile = function (item, settings) {
+    return templates;
+  }
+  function vangoghCompile(item, settings) {
+    var templates = { original: normalizeUri(settings.filesUrl + '/' + item.file_url) };
     switch (item.media_type) {
     case 'picture':
     case 'site_icon':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_#mode#'),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_#mode#');
+      break;
     case 'document':
     case 'music':
     case 'secure_music':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     case 'ufonts':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        preview: normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg'),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      templates.preview = normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg');
+      break;
     case 'swf':
-      return {
-        thumbnail: normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png'),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png');
+      break;
     case 'watermark':
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     default:
-      return {
-        thumbnail: normalizeUri(settings.filesUrl + '/' + item.icon_url),
-        original: normalizeUri(settings.filesUrl + '/' + item.file_url)
-      };
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
     }
-  };
+    return templates;
+  }
+  function compileUrlsTemplate(item, settings) {
+    if (settings.imageOperationsApi === 'rembrandt') {
+      return rembrandtCompile(item, settings);
+    }
+    if (settings.imageOperationsApi === 'vanbrandt') {
+      return rembrandtCompile(item, settings, true);
+    }
+    return vangoghCompile(item, settings);
+  }
   return function (itemData, settings, thumbnailSizes) {
     function insertSizes(urlsTemplate) {
       return Object.keys(thumbnailSizes).reduce(function (compiledUrls, thumbType) {
@@ -778,8 +758,8 @@ src_sources_private_mappers_item = function (mappers, utils) {
       fileInput: mappers.toObject(itemData.file_input),
       fileOutput: mappers.toObject(itemData.file_output)
     };
-    thumbnailSizes = utils.extend(settings.thumbnailSizes, thumbnailSizes);
-    item = utils.extend(item, insertSizes(compileUrlsTemplate(itemData, settings)));
+    thumbnailSizes = utils.extend({}, settings.thumbnailSizes, thumbnailSizes);
+    utils.extend(item, insertSizes(compileUrlsTemplate(itemData, settings)));
     return item;
   };
 }(src_utils_mappers, src_utils_utils);
@@ -807,8 +787,8 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
     };
     function list(folderId, options) {
       options = options || {};
-      var sort = utils.extend(defaultSort, options.sort);
-      var paging = utils.extend(defaultPaging, options.paging);
+      var sort = utils.extend({}, defaultSort, options.sort);
+      var paging = utils.extend({}, defaultPaging, options.paging);
       var queryParams = {
         page_size: paging.size,
         cursor: paging.cursor,
@@ -836,8 +816,8 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
     }
     function searchByTag(tag, options) {
       options = options || {};
-      var sort = utils.extend(defaultSort, options.sort);
-      var paging = utils.extend(defaultPaging, options.paging);
+      var sort = utils.extend({}, defaultSort, options.sort);
+      var paging = utils.extend({}, defaultPaging, options.paging);
       var queryParams = {
         page_size: paging.size,
         cursor: paging.cursor,
@@ -942,7 +922,7 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
         cache: false
       }).then(function (result) {
         return toItem(result.data, settings);
-      }, failHandler);
+      }).catch(failHandler);
     }
     function update(item, newItemProps) {
       var arePropsValid = validateNewProps(newItemProps);
@@ -962,7 +942,7 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
       }, { withCredentials: true }).then(function (res) {
         res.data = utils.merge(item, newItemProps);
         return res;
-      }, failHandler);
+      }).catch(failHandler);
     }
     return {
       onItemUploadProgress: onItemUploadProgress,
