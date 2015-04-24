@@ -3,7 +3,7 @@ var bluebird_original = window.Promise;
 if (window.Promise !== window.P) {
 console.warn('Bluebird is not available, cancel and progress will not work');
 }
-var bluebird, src_utils_utils, src_utils_mappers, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_sources_decorators, src_events_list, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_services_file_to_upload, src_services_upload_collection, src_wixmp;
+var bluebird, src_utils_utils, src_utils_mappers, src_utils_http, src_events_notifier, src_sources_Source, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_folders, src_sources_private_validators_new_props, src_sources_private_folder, src_sources_private_mappers_item, src_sources_private_items, src_sources_private_item, src_sources_private_itemstrash, src_sources_private_folderstrash, src_sources_private_settings, src_sources_decorators, src_events_list, src_services_channel_channel, src_sources_private_Private, src_sources_picasa_settings, src_sources_picasa_mappers_folder, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error, src_sources_picasa_folders, src_sources_picasa_mappers_item, src_sources_picasa_parsers_items, src_sources_picasa_items, src_sources_picasa_Picasa, src_sources_instagram_settings, src_sources_instagram_mappers_folder, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error, src_sources_instagram_folders, src_sources_instagram_mappers_item, src_sources_instagram_parsers_items, src_sources_instagram_items, src_sources_instagram_Instagram, src_sources_facebook_settings, src_sources_facebook_mappers_folder, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error, src_sources_facebook_folders, src_sources_facebook_mappers_item, src_sources_facebook_parsers_items, src_sources_facebook_items, src_sources_facebook_Facebook, src_sources_flickr_settings, src_sources_flickr_mappers_folder, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error, src_sources_flickr_folders, src_sources_flickr_mappers_item, src_sources_flickr_parsers_items, src_sources_flickr_items, src_sources_flickr_Flickr, src_sources_list, src_events_events, src_connector_connector_settings, src_connector_connector, src_services_bi_events_ids, src_services_bi_request, src_services_bi_bi, src_services_upload_file_to_upload, src_services_upload_upload_collection, src_wixmp;
 (function (e) {
   if (typeof exports === 'object' && typeof module !== 'undefined') {
     module.exports = e(P);
@@ -47,8 +47,7 @@ var bluebird, src_utils_utils, src_utils_mappers, src_utils_http, src_events_not
   };
   return Promise;
 }));
-src_utils_utils = function () {
-  
+src_utils_utils = function (Promise) {
   function minMaxFinder(method, arr, predicate) {
     var mappedArr;
     if (predicate) {
@@ -186,12 +185,34 @@ src_utils_utils = function () {
         throw new Error('URI is not a string');
       }
       return uri.replace(/([a-z\-_0-9]+)\/\//gi, '$1/');
+    },
+    getScript: function (src) {
+      return new Promise(function (resolve, reject) {
+        var head = document.getElementsByTagName('head')[0], script = document.createElement('script'), done = false;
+        script.src = src;
+        script.onload = script.onreadystatechange = function () {
+          if (!done && (!this.readyState || this.readyState === 'loaded' || this.readyState === 'complete')) {
+            done = true;
+            resolve();
+            script.onload = script.onreadystatechange = null;
+            if (head && script.parentNode) {
+              head.removeChild(script);
+            }
+          } else {
+            reject();
+          }
+        };
+        head.insertBefore(script, head.firstChild);
+      });
+    },
+    isGuid: function (guid) {
+      return /^\w{8}-(\w{4}-){3}\w{12}$/.test(guid);
     }
   };
   utils.min = utils.partial(minMaxFinder, 'min');
   utils.max = utils.partial(minMaxFinder, 'max');
   return utils;
-}();
+}(bluebird);
 src_utils_mappers = {
   toObject: function (data) {
     if (!data) {
@@ -217,14 +238,35 @@ src_utils_mappers = {
   }
 };
 src_utils_http = function (Promise, utils, mappers) {
-  
-  var post, get, upload, openRequest, encode, buildUrl, parseRequest, parseResponse, wrapRequestWithPromise, defaultOptions;
-  defaultOptions = {
+  var defaultOptions = {
     withCredentials: false,
     cache: true,
     headers: { Accept: 'application/json, text/plain, */*' }
   };
-  wrapRequestWithPromise = function (request, callSend, hasProgress) {
+  function parseResponse(response) {
+    if (typeof response === 'string') {
+      if ([
+          '{',
+          '['
+        ].indexOf(response[0]) >= 0) {
+        response = JSON.parse(response);
+      } else {
+        response = { message: response };
+      }
+    }
+    return response;
+  }
+  function parseRequest(request) {
+    return {
+      status: request.status,
+      statusText: request.statusText,
+      data: parseResponse(request.responseText)
+    };
+  }
+  function encode(val) {
+    return encodeURIComponent(val).replace(/%40/gi, '@').replace(/%3A/gi, ':').replace(/%24/g, '$').replace(/%2C/gi, ',').replace(/%20/g, '+');
+  }
+  function wrapRequestWithPromise(request, callSend, hasProgress) {
     var promise = new Promise(function (resolve, reject) {
       request.addEventListener('error', function () {
         reject(mappers.toError(utils.extend({}, request, {
@@ -289,28 +331,8 @@ src_utils_http = function (Promise, utils, mappers) {
     });
     callSend();
     return promise;
-  };
-  parseRequest = function (request) {
-    return {
-      status: request.status,
-      statusText: request.statusText,
-      data: parseResponse(request.responseText)
-    };
-  };
-  parseResponse = function (response) {
-    if (typeof response === 'string') {
-      if ([
-          '{',
-          '['
-        ].indexOf(response[0]) >= 0) {
-        response = JSON.parse(response);
-      } else {
-        response = { message: response };
-      }
-    }
-    return response;
-  };
-  buildUrl = function (url, params) {
+  }
+  function buildUrl(url, params) {
     if (!params) {
       return url;
     }
@@ -336,11 +358,8 @@ src_utils_http = function (Promise, utils, mappers) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + parts.join('&');
     }
     return url;
-  };
-  encode = function (val) {
-    return encodeURIComponent(val).replace(/%40/gi, '@').replace(/%3A/gi, ':').replace(/%24/g, '$').replace(/%2C/gi, ',').replace(/%20/g, '+');
-  };
-  openRequest = function (method, url, options) {
+  }
+  function openRequest(method, url, options) {
     var request = new XMLHttpRequest();
     if (options.cache === false) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
@@ -348,19 +367,18 @@ src_utils_http = function (Promise, utils, mappers) {
     request.open(method.toUpperCase(), utils.normalizeUri(url));
     request.responseType = options.responseType;
     request.withCredentials = options.withCredentials;
-    //request.withCredentials = true;
     Object.keys(options.headers).forEach(function (name) {
       request.setRequestHeader(name, options.headers[name]);
     });
     return request;
-  };
-  get = function (url, data, options) {
+  }
+  function get(url, data, options) {
     var request = openRequest('get', buildUrl(url, data), utils.extend({}, defaultOptions, options));
     return wrapRequestWithPromise(request, function () {
       request.send(null);
     });
-  };
-  post = function (url, data, options) {
+  }
+  function post(url, data, options) {
     var request = openRequest('post', url, utils.extend({}, defaultOptions, { headers: { 'Content-Type': 'application/json;charset=UTF-8' } }, options));
     return wrapRequestWithPromise(request, function () {
       if (data && typeof data === 'object' && data instanceof FormData === false) {
@@ -368,8 +386,8 @@ src_utils_http = function (Promise, utils, mappers) {
       }
       request.send(data);
     });
-  };
-  upload = function (url, multipart, options) {
+  }
+  function upload(url, multipart, options) {
     var fd, request = openRequest('post', url, utils.extend({}, defaultOptions, options));
     fd = new FormData();
     Object.keys(multipart).forEach(function (name) {
@@ -387,46 +405,54 @@ src_utils_http = function (Promise, utils, mappers) {
     return wrapRequestWithPromise(request, function () {
       request.send(fd);
     }, true);
-  };
+  }
+  function makeRetriable(method) {
+    return function () {
+      var self = this, args = arguments, firstPromise;
+      function callMethod() {
+        return method.apply(self, args);
+      }
+      firstPromise = callMethod();
+      var promise = new Promise(function (resolve, reject) {
+        firstPromise.then(resolve, function (reason) {
+          if (reason.message === 'aborted_by_user') {
+            reject(reason);
+            return Promise.reject(reason);
+          }
+          return callMethod();
+        }).then(resolve, reject);
+      });
+      firstPromise.progress(function (progress) {
+        promise.notify(progress);
+      });
+      promise.cancellable().catch(function (reason) {
+        if (reason.message === 'aborted_by_user') {
+          firstPromise.abort();
+        }
+      });
+      return promise;
+    };
+  }
   return {
-    get: get,
-    post: post,
-    upload: upload
+    get: makeRetriable(get),
+    post: makeRetriable(post),
+    upload: makeRetriable(upload)
   };
 }(bluebird, src_utils_utils, src_utils_mappers);
 src_events_notifier = function (Promise) {
-  
   var listeners = {};
   function noop() {
   }
-  /**
-   * Call each function at list with specified data
-   * @param functions [{Function}]
-   * @param data {*}
-   */
   function callEach(functions, data) {
     functions.forEach(function (currentFunction) {
       currentFunction(data);
     });
   }
-  /**
-   * Give an array of array of functions, call all functions at specified index with specified data
-   * @param functions [[{Function}]]
-   * @param index {Number}
-   * @param data {*}
-   */
-  function callEactAtIndex(functions, index, data) {
+  function callEachAtIndex(functions, index, data) {
     functions.forEach(function (functions) {
       functions[index](data);
     });
   }
-  /**
-   * Emit event with new array of Promises for each listeners
-   * @param eventTarget {Object} Who was emit an event
-   * @param eventName {String}
-   * @param [params] {Object} Any additional parameters for listener
-   * @returns {{resolve: resolve, reject: reject}}
-   */
   function emitWithArrayOfPromises(eventTarget, eventName, params) {
     // no listeners
     if (typeof listeners[eventName] === 'undefined') {
@@ -449,20 +475,13 @@ src_events_notifier = function (Promise) {
     });
     return {
       resolveAt: function (index, data) {
-        callEactAtIndex(resolvers, index, data);
+        callEachAtIndex(resolvers, index, data);
       },
       rejectAt: function (index, data) {
-        callEactAtIndex(rejectors, index, data);
+        callEachAtIndex(rejectors, index, data);
       }
     };
   }
-  /**
-   * Emit event with new Promise for each listeners
-   * @param eventTarget {Object} Who was emit an event
-   * @param eventName {String}
-   * @param [params] {Object} Any additional parameters for listener
-   * @returns {{resolve: resolve, reject: reject}}
-   */
   function emit(eventTarget, eventName, params) {
     if (typeof eventTarget !== 'object' || eventTarget === null) {
       throw new Error('target should be a function');
@@ -501,9 +520,12 @@ src_events_notifier = function (Promise) {
     };
   }
   /**
-   * Subscribe listener to event
-   * @param eventName {String}
-   * @param listener {Function}
+   * @summary Subscribe listener to event
+   * @name on
+   * @memberof wixmp.events
+   * @method
+   * @param eventName {String} Event name
+   * @param listener {Function} Callback function that is when corresponding method is fired
    */
   function addListener(eventName, listener) {
     if (typeof listeners[eventName] === 'undefined') {
@@ -512,9 +534,12 @@ src_events_notifier = function (Promise) {
     listeners[eventName].push(listener);
   }
   /**
-   * Unsubscribe listener from event
-   * @param eventName {String}
-   * @param listener {Function}
+   * @summary Unsubscribe listener from event
+   * @name off
+   * @memberof wixmp.events
+   * @method
+   * @param eventName {String} Event name
+   * @param listener {Function} Callback function
    */
   function removeListener(eventName, listener) {
     if (listeners[eventName]) {
@@ -529,7 +554,14 @@ src_events_notifier = function (Promise) {
   };
 }(bluebird);
 src_sources_Source = function (http, notifier) {
-  
+  /**
+   * @summary The constructor function of a source
+   * @namespace Source
+   * @class
+   * @memberof wixmp
+   * @param {Function} Source constructor function
+   * @param {Object} Source settings
+   */
   return function (SourceConstructor, settings) {
     if (typeof SourceConstructor !== 'function') {
       throw new Error('Source constructor should be a function');
@@ -543,6 +575,7 @@ src_sources_Source = function (http, notifier) {
 src_sources_private_mappers_folder = function (folderData) {
   return {
     id: folderData.folder_id,
+    parentId: folderData.parent_folder_id || null,
     name: folderData.folder_name,
     mediaType: folderData.media_type,
     filesCount: folderData.files_count,
@@ -550,7 +583,6 @@ src_sources_private_mappers_folder = function (folderData) {
   };
 };
 src_sources_private_parsers_error = function (Promise) {
-  
   return function (response) {
     if (response.status === 403 && response.data.error_description === 'Missing Wix session') {
       response.status = 401;
@@ -560,11 +592,19 @@ src_sources_private_parsers_error = function (Promise) {
   };
 }(bluebird);
 src_sources_private_folders = function (http, toFolder, toError) {
-  
   return function (settings) {
     function failHandler(reason) {
       return toError(reason);
     }
+    /**
+     * @summary Return the list of folders
+     * @memberof source.folders
+     * @param {String} folderId
+     * @param {ListSettings} options
+     * @returns {Promise}
+     * @fulfill {List[]} List with Folders
+     * @reject {Error}
+     */
     function list(folderId, options) {
       options = options || {};
       return http.get(settings.apiUrl + '/folders', {
@@ -572,13 +612,19 @@ src_sources_private_folders = function (http, toFolder, toError) {
         folder_id: folderId || null
       }, { withCredentials: true }).then(function (response) {
         return { data: response.data.folders.map(toFolder) };
-      }, failHandler);
+      }).catch(failHandler);
     }
     function removeFolder(folderId) {
       return http.post(settings.apiUrl + '/folders/' + folderId + '/delete', null, { withCredentials: true }).then(function () {
         return folderId;
-      }, failHandler);
+      }).catch(failHandler);
     }
+    /**
+     * @summary Removes the list of folders with given ids
+     * @memberof source.folders
+     * @param {string[]} folderIds Array of folder ids
+     * @returns {Promise}
+     */
     function remove(folderIds) {
       return folderIds.map(removeFolder);
     }
@@ -607,14 +653,36 @@ src_sources_private_validators_new_props = function (newProps) {
       message: 'Please specify folder id'
     };
   }
+  if (typeof newProps.parentId !== 'undefined' && !newProps.parentId) {
+    return {
+      valid: false,
+      message: 'Please specify parent folder id'
+    };
+  }
+  if (typeof newProps.tags !== 'undefined' && !Array.isArray(newProps.tags)) {
+    return {
+      valid: false,
+      message: 'Tags should be an array'
+    };
+  }
   return { valid: true };
 };
 src_sources_private_folder = function (http, mappers, utils, toFolder, toError, validateNewProps) {
-  
   return function (settings) {
     function failHandler(reason) {
       return toError(reason);
     }
+    /**
+     * @summary Create a new folder with given name and parameters
+     * @memberof source.folder
+     * @param {string} folderName
+     * @param {object} options
+     * @param {string} options.mediaType
+     * @param {string} options.parentId
+     * @returns {Promise}
+     * @fulfill {Folder} New folder object
+     * @reject {Error}
+     */
     function create(folderName, options) {
       if (!folderName) {
         return failHandler(mappers.toError({
@@ -626,12 +694,22 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
       options = options || {};
       return http.post(settings.apiUrl + '/folders', {
         folder_name: folderName,
-        media_type: options.mediaType || 'picture'
+        media_type: options.mediaType || 'picture',
+        parent_folder_id: options.parentId || null
       }, { withCredentials: true }).then(function (res) {
         res.data = toFolder(res.data);
         return res;
-      }, failHandler);
+      }).catch(failHandler);
     }
+    /**
+     * @summary Updates the folder with given diff object
+     * @memberof source.folder
+     * @param {Folder} folder Current folder object that should be updated
+     * @param {object} newFolderProps
+     * @returns {Promise}
+     * @fulfill {Folder} Modified folder object
+     * @reject {Error}
+     */
     function update(folder, newFolderProps) {
       var arePropsValid = validateNewProps(newFolderProps);
       if (arePropsValid.valid === false) {
@@ -641,10 +719,17 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
           data: { message: arePropsValid.message }
         }));
       }
-      return http.post(settings.apiUrl + '/folders/' + folder.id + '/put', { folder_name: newFolderProps.name }, { withCredentials: true }).then(function (res) {
-        res.data = utils.merge(folder, newFolderProps);
+      var propsToUpdate = {};
+      if (newFolderProps.name) {
+        propsToUpdate.folder_name = newFolderProps.name;
+      }
+      if (newFolderProps.parentId) {
+        propsToUpdate.parent_folder_id = newFolderProps.parentId;
+      }
+      return http.post(settings.apiUrl + '/folders/' + folder.id + '/put', propsToUpdate, { withCredentials: true }).then(function (res) {
+        res.data = utils.extend({}, folder, newFolderProps);
         return res;
-      }, failHandler);
+      }).catch(failHandler);
     }
     return {
       create: create,
@@ -653,7 +738,6 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
   };
 }(src_utils_http, src_utils_mappers, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error, src_sources_private_validators_new_props);
 src_sources_private_mappers_item = function (mappers, utils) {
-  
   var normalizeUri = utils.normalizeUri;
   function rembrandtCompile(item, settings, doNotCutNameFromId) {
     var regexp = /([^\/]+)$/;
@@ -666,61 +750,52 @@ src_sources_private_mappers_item = function (mappers, utils) {
     function getFileName(id) {
       return regexp.exec(id)[1];
     }
-    var templates = { original: normalizeUri(settings.filesUrl + '/' + item.file_url) };
+    var templates = {};
+    if (item.file_url) {
+      templates.original = normalizeUri(settings.filesUrl + '/' + item.file_url);
+    }
+    if (item.icon_url) {
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+    }
     switch (item.media_type) {
     case 'picture':
     case 'site_icon':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url));
+      if (item.file_url) {
+        templates.thumbnail = normalizeUri(settings.filesUrl + '/' + cutNameFromId(item.file_url) + '/v1/#mode#/w_#width#,h_#height#/' + getFileName(item.file_url));
+      }
       break;
-    case 'document':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
-      break;
-    case 'music':
-    case 'secure_music':
-      templates.thumbnail = './images/music-preview.png';
-      break;
+    //TODO: use proper preview
     case 'video':
       templates.thumbnail = item.icon_url ? normalizeUri(settings.filesUrl + '/' + item.icon_url) : './images/video-preview.png';
       break;
     case 'ufonts':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
       templates.preview = normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg');
       break;
-    case 'swf':
-      templates.thumbnail = normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png');
-      break;
-    case 'watermark':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
-      break;
     default:
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     }
     return templates;
   }
   function vangoghCompile(item, settings) {
-    var templates = { original: normalizeUri(settings.filesUrl + '/' + item.file_url) };
+    var templates = {};
+    if (item.file_url) {
+      templates.original = normalizeUri(settings.filesUrl + '/' + item.file_url);
+    }
+    if (item.icon_url) {
+      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+    }
     switch (item.media_type) {
     case 'picture':
     case 'site_icon':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_#mode#');
-      break;
-    case 'document':
-    case 'music':
-    case 'secure_music':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      if (item.file_url) {
+        templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.file_url + '_#mode#_#width#_#height#_75_22_0.5_1.20_0.00_jpg_#mode#');
+      }
       break;
     case 'ufonts':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
       templates.preview = normalizeUri(settings.filesUrl + '/media' + item.file_name.replace(/\..*/, '') + '_prvw.jpg');
       break;
-    case 'swf':
-      templates.thumbnail = normalizeUri((settings.staticFiles || 'http://static.wix.com') + '/services/web/2.690.2/images/web/flash_swf_icon.png');
-      break;
-    case 'watermark':
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
-      break;
     default:
-      templates.thumbnail = normalizeUri(settings.filesUrl + '/' + item.icon_url);
+      break;
     }
     return templates;
   }
@@ -733,10 +808,13 @@ src_sources_private_mappers_item = function (mappers, utils) {
     }
     return vangoghCompile(item, settings);
   }
-  return function (itemData, settings, thumbnailSizes) {
+  return function (itemData, settings, thumbnailSizes, undefinedInsteadOfNull) {
     function insertSizes(urlsTemplate) {
       return Object.keys(thumbnailSizes).reduce(function (compiledUrls, thumbType) {
         var compiledUrlKey = thumbType + 'Url', thumbSizeData = utils.extend({}, thumbnailSizes[thumbType]), urlTemplate = urlsTemplate[thumbType] || urlsTemplate.thumbnail;
+        if (!urlTemplate) {
+          return compiledUrls;
+        }
         if (settings.imageOperationsApi === 'vangogh') {
           thumbSizeData.mode = utils.transformModeToVangogh(thumbSizeData.mode);
         }
@@ -744,27 +822,33 @@ src_sources_private_mappers_item = function (mappers, utils) {
         return compiledUrls;
       }, {});
     }
+    var defaultValue = undefinedInsteadOfNull ? undefined : null;
     var item = {
       id: itemData.file_name,
-      folderId: itemData.parent_folder_id || null,
+      folderId: itemData.parent_folder_id || defaultValue,
       name: itemData.original_file_name,
       mediaType: itemData.media_type,
-      fileUrl: normalizeUri(itemData.file_url),
+      fileUrl: itemData.file_url ? normalizeUri(itemData.file_url) : defaultValue,
       createdAt: itemData.created_ts,
       tags: utils.splitTags(itemData.tags),
-      width: itemData.width || null,
-      height: itemData.height || null,
-      fileInfo: mappers.toObject(itemData.file_info),
-      fileInput: mappers.toObject(itemData.file_input),
-      fileOutput: mappers.toObject(itemData.file_output)
+      width: itemData.width || defaultValue,
+      height: itemData.height || defaultValue,
+      fileInfo: itemData.file_info ? mappers.toObject(itemData.file_info) : defaultValue,
+      fileInput: itemData.file_input ? mappers.toObject(itemData.file_input) : defaultValue,
+      fileOutput: itemData.file_output ? mappers.toObject(itemData.file_output) : defaultValue,
+      transcodingStatus: itemData.op_status
     };
     thumbnailSizes = utils.extend({}, settings.thumbnailSizes, thumbnailSizes);
     utils.extend(item, insertSizes(compileUrlsTemplate(itemData, settings)));
+    Object.keys(item).forEach(function (prop) {
+      if (item[prop] === undefined) {
+        delete item[prop];
+      }
+    });
     return item;
   };
 }(src_utils_mappers, src_utils_utils);
 src_sources_private_items = function (Promise, http, utils, toItem, toError) {
-  
   return function (settings) {
     function failHandler(reason) {
       return toError(reason);
@@ -785,6 +869,15 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
       order: 'date',
       direction: 'desc'
     };
+    /**
+     * @summary Returns the list of items from the given folder
+     * @memberof source.items
+     * @param {string} folderId
+     * @param {ListSettings} options
+     * @returns {Promise}
+     * @fulfill {List}
+     * @reject {Error}
+     */
     function list(folderId, options) {
       options = options || {};
       var sort = utils.extend({}, defaultSort, options.sort);
@@ -793,7 +886,7 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
         page_size: paging.size,
         cursor: paging.cursor,
         parent_folder_id: folderId,
-        media_type: options.mediaType
+        media_type: options.mediaType || 'picture'
       };
       queryParams.order = sort.direction === 'desc' ? '-' + sort.order : sort.order;
       return http.get(settings.apiUrl + '/files/getpage', queryParams, { withCredentials: true }).then(function (response) {
@@ -811,9 +904,24 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
         return itemId;
       }).catch(failHandler);
     }
+    /**
+     * @summary Removes the items with given ids
+     * @memberof source.items
+     * @param {Array} itemsId
+     * @returns {Array}
+     */
     function remove(itemsId) {
       return itemsId.map(removeItem);
     }
+    /**
+     * @summary Return list of items found by tag
+     * @memberof source.items
+     * @param {string} tag
+     * @param {ListSettings} options
+     * @returns {Promise}
+     * @fulfill {List}
+     * @reject {Error}
+     */
     function searchByTag(tag, options) {
       options = options || {};
       var sort = utils.extend({}, defaultSort, options.sort);
@@ -821,7 +929,7 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
       var queryParams = {
         page_size: paging.size,
         cursor: paging.cursor,
-        media_type: options.mediaType,
+        media_type: options.mediaType || 'picture',
         order: sort.direction === 'desc' ? '-' + sort.order : sort.order
       };
       return http.get(settings.apiUrl + '/files/get?tag=' + tag, queryParams, {
@@ -845,7 +953,6 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
   };
 }(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error);
 src_sources_private_item = function (Promise, http, utils, toItem, toError, validateNewProps, mappers) {
-  
   return function (settings) {
     var uploadProgressEvents = [];
     function getFilesSizeLimit(mediaType) {
@@ -908,6 +1015,7 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
         }));
       }
       var uploadPromiseChain = getUploadUrl(fileSource).then(function (response) {
+        fileToUpload.upload_token = response.data.upload_token;
         return http.upload(response.data.upload_url, fileToUpload, { withCredentials: true }).progress(function (progress) {
           uploadPromiseChain.notify(progress);
         });
@@ -916,6 +1024,14 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
       });
       return uploadPromiseChain;
     }
+    /**
+     * @summary Returns items
+     * @memberof source.item
+     * @param {string} itemId
+     * @returns {Promise}
+     * @fulfill {Item}
+     * @reject {Error}
+     */
     function get(itemId) {
       return http.get(settings.apiUrl + '/files/' + itemId, null, {
         withCredentials: true,
@@ -924,6 +1040,15 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
         return toItem(result.data, settings);
       }).catch(failHandler);
     }
+    /**
+     * @summary Updates the item with given diff object
+     * @memberof source.item
+     * @param {Item} item Current item object that should be updated
+     * @param {object} newItemProps
+     * @returns {Promise}
+     * @fulfill {Item} Modified item object
+     * @reject {Error}
+     */
     function update(item, newItemProps) {
       var arePropsValid = validateNewProps(newItemProps);
       if (arePropsValid.valid === false) {
@@ -933,14 +1058,18 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
           data: { message: arePropsValid.message }
         }));
       }
-      newItemProps.tags = newItemProps.tags || item.tags || [];
-      var newTags = newItemProps.tags.join(',');
-      return http.post(settings.apiUrl + '/files/' + item.id + '/put', {
-        original_file_name: newItemProps.name,
-        parent_folder_id: newItemProps.folderId,
-        tags: newTags
-      }, { withCredentials: true }).then(function (res) {
-        res.data = utils.merge(item, newItemProps);
+      var propsToUpdate = {};
+      if (newItemProps.name) {
+        propsToUpdate.original_file_name = newItemProps.name;
+      }
+      if (newItemProps.folderId) {
+        propsToUpdate.parent_folder_id = newItemProps.folderId;
+      }
+      if (newItemProps.tags) {
+        propsToUpdate.tags = newItemProps.tags.join(',');
+      }
+      return http.post(settings.apiUrl + '/files/' + item.id + '/put', propsToUpdate, { withCredentials: true }).then(function (res) {
+        res.data = utils.extend({}, item, newItemProps);
         return res;
       }).catch(failHandler);
     }
@@ -953,17 +1082,130 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
     };
   };
 }(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error, src_sources_private_validators_new_props, src_utils_mappers);
+src_sources_private_itemstrash = function (Promise, http, utils, toItem, toError) {
+  return function (settings) {
+    function failHandler(reason) {
+      return toError(reason);
+    }
+    function toItemList(res, thumbnailSizes) {
+      if (!res.data.trash_files) {
+        return [];
+      }
+      return res.data.trash_files.map(function (item) {
+        return toItem(item, settings, thumbnailSizes);
+      });
+    }
+    var defaultPaging = {
+      size: 50,
+      cursor: null
+    };
+    var defaultSort = {
+      order: 'date',
+      direction: 'desc'
+    };
+    function list(folderId, options) {
+      options = options || {};
+      var sort = utils.extend({}, defaultSort, options.sort);
+      var paging = utils.extend({}, defaultPaging, options.paging);
+      var queryParams = {
+        page_size: paging.size,
+        cursor: paging.cursor,
+        parent_folder_id: folderId,
+        media_type: options.mediaType || 'picture'
+      };
+      queryParams.order = sort.direction === 'desc' ? '-' + sort.order : sort.order;
+      return http.get(settings.apiUrl + '/files/getpage/trash', queryParams, { withCredentials: true }).then(function (response) {
+        return {
+          data: toItemList(response, options.thumbnails),
+          paging: {
+            size: paging.size,
+            cursor: response.data.cursor
+          }
+        };
+      }).then(function (response) {
+        response.data.forEach(function (item) {
+          item.isInTrash = true;
+        });
+        return response;
+      }).catch(failHandler);
+    }
+    function removeItem(itemId) {
+      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/delete', null, { withCredentials: true }).then(function () {
+        return itemId;
+      }).catch(failHandler);
+    }
+    function remove(itemsId) {
+      return itemsId.map(removeItem);
+    }
+    function restoreItem(itemId) {
+      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/restore', null, { withCredentials: true }).then(function () {
+        return itemId;
+      }).catch(failHandler);
+    }
+    function restore(itemsId) {
+      return itemsId.map(restoreItem);
+    }
+    return {
+      list: list,
+      remove: remove,
+      restore: restore
+    };
+  };
+}(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_item, src_sources_private_parsers_error);
+src_sources_private_folderstrash = function (Promise, http, utils, toFolder, toError) {
+  return function (settings) {
+    function failHandler(reason) {
+      return toError(reason);
+    }
+    function list(folderId, options) {
+      options = options || {};
+      return http.get(settings.apiUrl + '/files/getpage/trash', {
+        media_type: options.mediaType || 'picture',
+        folder_id: folderId || null,
+        trash_type: 'folder'
+      }, { withCredentials: true }).then(function (response) {
+        return { data: response.data.trash_folders.map(toFolder) };
+      }).then(function (response) {
+        response.data.forEach(function (folder) {
+          folder.isInTrash = true;
+        });
+        return response;
+      }).catch(failHandler);
+    }
+    function removeFolder(folderId) {
+      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/delete', null, { withCredentials: true }).then(function () {
+        return folderId;
+      }).catch(failHandler);
+    }
+    function remove(folderIds) {
+      return folderIds.map(removeFolder);
+    }
+    function restoreFolder(folderId) {
+      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/restore', null, { withCredentials: true }).then(function () {
+        return folderId;
+      }).catch(failHandler);
+    }
+    function restore(folderIds) {
+      return folderIds.map(restoreFolder);
+    }
+    return {
+      list: list,
+      remove: remove,
+      restore: restore
+    };
+  };
+}(bluebird, src_utils_http, src_utils_utils, src_sources_private_mappers_folder, src_sources_private_parsers_error);
 src_sources_private_settings = {
-  apiUrl: 'http://files.wix.com',
+  apiUrl: '//files.wix.com',
   imageOperationsApi: 'vangogh',
-  filesUrl: 'http://static.wixstatic.com',
+  filesUrl: '//static.wixstatic.com',
   uploadLimits: {
     default: 15728640,
     document: 15728640,
     picture: 15728640,
     music: 52428800,
     video: 524288000,
-    secureMusic: 157286400
+    secureMusic: 377487360
   },
   thumbnailSizes: {
     thumbnail: {
@@ -981,81 +1223,120 @@ src_sources_private_settings = {
       height: 1000,
       mode: 'fit'
     }
+  },
+  channel: {
+    withCredentials: true,
+    jsapiUrl: '/_ah/channel/jsapi',
+    tokenUrl: '/users/channel'
   }
 };
 src_sources_decorators = function (Promise, notifier, utils) {
-  
-  return {
-    /**
-     * Add events to all namespaces methods at eventsTarget
-     * @param eventsTarget {Object} source instance
-     * @param events {Object} see events/list.js
-     * @param methods {Object}
-     * @returns {Object} methods with events
-     */
-    addEvents: function (eventsTarget, events, methods) {
-      var methodsWithEvents = {};
-      Object.keys(events).forEach(function (eventKey) {
-        var methodName = utils.snakeToCamel(eventKey.toLowerCase());
-        if (typeof methods[methodName] !== 'function') {
-          return;
-        }
-        // define new method with event generation
-        methodsWithEvents[methodName] = function () {
-          // emit before event and call native method
-          //var event = notifier.emit(eventsTarget, events[eventKey], {arguments: arguments});
-          var args = arguments, promise = methods[methodName].apply(methods, args), params = { arguments: args }, event, wrapped;
-          if (Array.isArray(promise)) {
-            params.promises = promise;
-            event = notifier.emit(eventsTarget, events[eventKey], params);
-            promise.forEach(function (promise, index) {
-              var wrappedInner = promise.then(function (data) {
-                event.resolveAt(index, data);
-              }, function (reason) {
-                event.rejectAt(index, reason);
-              });
-              promise.progress(function (progress) {
-                wrappedInner.notify(progress);
-              });
-            });
-            return promise;
-          }
+  function addEvents(eventsTarget, events, methods) {
+    var methodsWithEvents = {};
+    Object.keys(events).forEach(function (eventKey) {
+      var methodName = utils.snakeToCamel(eventKey.toLowerCase());
+      if (typeof methods[methodName] === 'object' && methods[methodName] !== null && typeof events[eventKey] === 'object' && events[eventKey] !== null) {
+        methodsWithEvents[methodName] = addEvents(eventsTarget, events[eventKey], methods[methodName]);
+        return;
+      } else if (typeof methods[methodName] !== 'function') {
+        return;
+      }
+      // define new method with event generation
+      methodsWithEvents[methodName] = function () {
+        // emit before event and call native method
+        //var event = notifier.emit(eventsTarget, events[eventKey], {arguments: arguments});
+        var args = arguments, promise = methods[methodName].apply(methods, args), params = { arguments: args }, event, wrapped;
+        if (Array.isArray(promise)) {
+          params.promises = promise;
           event = notifier.emit(eventsTarget, events[eventKey], params);
-          wrapped = promise.then(function (data) {
-            event.resolve(data);
-            return data;
-          }, function (reason) {
-            event.reject(reason);
-            return Promise.reject(reason);
+          promise.forEach(function (promise, index) {
+            var wrappedInner = promise.then(function (data) {
+              event.resolveAt(index, data);
+            }, function (reason) {
+              event.rejectAt(index, reason);
+            });
+            promise.progress(function (progress) {
+              wrappedInner.notify(progress);
+            });
           });
-          promise.progress(function (progress) {
-            wrapped.notify(progress);
-          });
-          return wrapped;
-        };
-      });
-      return methodsWithEvents;
-    }
-  };
+          return promise;
+        }
+        event = notifier.emit(eventsTarget, events[eventKey], params);
+        wrapped = promise.then(function (data) {
+          event.resolve(data);
+          return data;
+        }, function (reason) {
+          event.reject(reason);
+          return Promise.reject(reason);
+        });
+        promise.progress(function (progress) {
+          wrapped.notify(progress);
+        });
+        return wrapped;
+      };
+    });
+    return methodsWithEvents;
+  }
+  return { addEvents: addEvents };
 }(bluebird, src_events_notifier, src_utils_utils);
 src_events_list = {
+  /**
+   * @summary List of possible folders events
+   * @enum
+   * @memberof wixmp.events
+   */
   FOLDERS: {
     LIST: 'folders.list',
-    REMOVE: 'folders.remove'
+    REMOVE: 'folders.remove',
+    /**
+     * @summary List of possible trashed folders events
+     * @enum
+     * @memberof wixmp.events.folders
+     */
+    TRASH: {
+      LIST: 'folders.trash.list',
+      RESTORE: 'folders.trash.restore',
+      REMOVE: 'folders.trash.remove'
+    }
   },
+  /**
+   * @summary List of possible folder events
+   * @enum
+   * @memberof wixmp.events
+   */
   FOLDER: {
     CREATE: 'folder.create',
     UPDATE: 'folder.update',
     REMOVE: 'folder.remove'
   },
+  /**
+   * @summary List of possible items events
+   * @enum
+   * @memberof wixmp.events
+   */
   ITEMS: {
     LIST: 'items.list',
     SEARCH: 'items.search',
     REMOVE: 'items.remove',
     UPLOAD: 'items.upload',
     UPLOAD_BY_URL: 'items.uploadByUrl',
-    SEARCH_BY_TAG: 'items.searchByTag'
+    SEARCH_BY_TAG: 'items.searchByTag',
+    /**
+     * @summary List of possible trashed items events
+     * @enum
+     * @memberof wixmp.events.items
+     */
+    TRASH: {
+      LIST: 'items.trash.list',
+      RESTORE: 'items.trash.restore',
+      REMOVE: 'items.trash.remove'
+    }
   },
+  /**
+   * @summary List of possible item events
+   * @enum
+   * @memberof wixmp.events
+   */
   ITEM: {
     GET: 'item.get',
     UPDATE: 'item.update',
@@ -1064,18 +1345,96 @@ src_events_list = {
     UPLOAD_BY_URL: 'item.uploadByUrl'
   }
 };
-src_sources_private_Private = function (initFolders, initFolder, initItems, initItem, defaultSettings, utils, decorators, eventsList) {
-  
+src_services_channel_channel = function (Promise, http, utils, notifier, eventsList) {
+  return function (settings, adapter, itemMapper) {
+    var channel = null, socket = null, jsApiAlreadyLoaded = false;
+    function open() {
+      function onMessage(message) {
+        console.log('message received:', message);
+        if (message.data === 'server connected') {
+          return;
+        }
+        try {
+          message = JSON.parse(message.data);
+          console.log(message);
+          if (message.type === 'status_update') {
+            var result = itemMapper(message.file, settings, {}, true);
+            console.log(result);
+            var event = notifier.emit(adapter, eventsList.ITEM.UPDATE, {
+              arguments: [
+                result,
+                result
+              ]
+            });
+            event.resolve({ data: result });
+          }
+        } catch (reason) {
+          console.log('something is wrong:', reason, reason.stack);
+        }
+      }
+      function onClose() {
+        console.log('socket is closing');
+        channel = null;
+        socket = null;
+      }
+      var def = Promise.defer();
+      if (channel && socket) {
+        def.resolve();
+      } else {
+        var jsApiLoadPromise;
+        if (jsApiAlreadyLoaded) {
+          jsApiLoadPromise = Promise.resolve();
+        } else {
+          jsApiLoadPromise = utils.getScript(settings.apiUrl + settings.channel.jsapiUrl).then(function () {
+            jsApiAlreadyLoaded = true;
+          });
+        }
+        jsApiLoadPromise.then(function () {
+          return http.get(settings.apiUrl + settings.channel.tokenUrl, null, { withCredentials: settings.channel.withCredentials });
+        }).then(function (tokenData) {
+          channel = new goog.appengine.Channel(tokenData.data.token);
+          socket = channel.open();
+          socket.onmessage = onMessage;
+          socket.onclose = onClose;
+          def.resolve();
+        }).catch(function (reason) {
+          console.log('something is wrong:', reason);
+          def.reject(reason);
+        });
+      }
+      return def.promise;
+    }
+    function close() {
+      if (socket) {
+        socket.close();
+        channel = null;
+        socket = null;
+      }
+    }
+    return {
+      open: open,
+      close: close
+    };
+  };
+}(bluebird, src_utils_http, src_utils_utils, src_events_notifier, src_events_list);
+src_sources_private_Private = function (initFolders, initFolder, initItems, initItem, initItemsTrash, initFoldersTrash, itemMapper, defaultSettings, utils, decorators, eventsList, initChannel) {
   return function (userSettings) {
-    var settings = utils.extend({}, defaultSettings, userSettings), folders = initFolders(settings), folder = initFolder(settings), items = initItems(settings), item = initItem(settings);
+    var settings = utils.extend({}, defaultSettings, userSettings), folders = initFolders(settings), folder = initFolder(settings), items = initItems(settings), item = initItem(settings), itemsTrash = initItemsTrash(settings), foldersTrash = initFoldersTrash(settings), channel = initChannel(settings, this, itemMapper);
+    folders.trash = foldersTrash;
+    items.trash = itemsTrash;
     this.name = 'private';
     this.folders = decorators.addEvents(this, eventsList.FOLDERS, folders);
     this.folder = decorators.addEvents(this, eventsList.FOLDER, folder);
     this.item = decorators.addEvents(this, eventsList.ITEM, item);
     this.items = decorators.addEvents(this, eventsList.ITEMS, items);
+    this.channel = channel;
   };
-}(src_sources_private_folders, src_sources_private_folder, src_sources_private_items, src_sources_private_item, src_sources_private_settings, src_utils_utils, src_sources_decorators, src_events_list);
-src_sources_picasa_settings = { apiUrl: 'http://pix-test.wix.com/services/google' };
+}(src_sources_private_folders, src_sources_private_folder, src_sources_private_items, src_sources_private_item, src_sources_private_itemstrash, src_sources_private_folderstrash, src_sources_private_mappers_item, src_sources_private_settings, src_utils_utils, src_sources_decorators, src_events_list, src_services_channel_channel);
+src_sources_picasa_settings = {
+  apiUrl: '//pix.wix.com/services/google',
+  foldersLimit: 500,
+  itemsLimit: 50
+};
 src_sources_picasa_mappers_folder = function (data) {
   return {
     id: data.gphoto$id.$t,
@@ -1087,19 +1446,16 @@ src_sources_picasa_mappers_folder = function (data) {
   };
 };
 src_sources_picasa_parsers_folders = function (toFolder) {
-  
   return function (data) {
     return { data: data.feed.entry.map(toFolder) };
   };
 }(src_sources_picasa_mappers_folder);
 src_sources_picasa_parsers_error = function (Promise) {
-  
   return function (response) {
     return Promise.reject(response);
   };
 }(bluebird);
 src_sources_picasa_folders = function (http, toFolders, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toFolders(response.data);
@@ -1107,17 +1463,20 @@ src_sources_picasa_folders = function (http, toFolders, toError) {
     function failHandler(reason) {
       return toError(reason);
     }
-    function list() {
-      return http.get(settings.apiUrl + '/albums', {
+    function list(folderId, options) {
+      options = options || {};
+      options.paging = options.paging || {};
+      var requestOptions = {
         thumbsize: '150c',
-        'max-results': 500
-      }, { withCredentials: true }).then(successHandler).catch(failHandler);
+        'max-results': options.paging.pageSize || settings.foldersLimit,
+        'start-index': options.paging.cursor || 1
+      };
+      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
 }(src_utils_http, src_sources_picasa_parsers_folders, src_sources_picasa_parsers_error);
 src_sources_picasa_mappers_item = function (utils) {
-  
   function getLastImage(mediaGroup) {
     var images = mediaGroup.media$thumbnail.filter(function (item) {
       return !item.medium || item.medium !== 'video';
@@ -1153,7 +1512,6 @@ src_sources_picasa_mappers_item = function (utils) {
   };
 }(src_utils_utils);
 src_sources_picasa_parsers_items = function (toItem) {
-  
   return function (data) {
     return {
       data: data.feed.entry.map(toItem),
@@ -1165,7 +1523,6 @@ src_sources_picasa_parsers_items = function (toItem) {
   };
 }(src_sources_picasa_mappers_item);
 src_sources_picasa_items = function (http, toItems, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toItems(response.data);
@@ -1180,7 +1537,7 @@ src_sources_picasa_items = function (http, toItems, toError) {
         album_id: folderId || null,
         kind: 'photo',
         thumbsize: '150c',
-        'max-results': options.paging.pageSize || 50,
+        'max-results': options.paging.pageSize || settings.itemsLimit,
         'start-index': options.paging.cursor || 1
       };
       return http.get(settings.apiUrl + '/photos', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
@@ -1189,7 +1546,6 @@ src_sources_picasa_items = function (http, toItems, toError) {
   };
 }(src_utils_http, src_sources_picasa_parsers_items, src_sources_picasa_parsers_error);
 src_sources_picasa_Picasa = function (settings, initFolders, initItems, decorators, eventsList) {
-  
   return function () {
     var folders = initFolders(settings), items = initItems(settings);
     this.folders = decorators.addEvents(this, eventsList.FOLDERS, folders);
@@ -1198,8 +1554,8 @@ src_sources_picasa_Picasa = function (settings, initFolders, initItems, decorato
   };
 }(src_sources_picasa_settings, src_sources_picasa_folders, src_sources_picasa_items, src_sources_decorators, src_events_list);
 src_sources_instagram_settings = {
-  apiUrl: 'http://pix-test.wix.com/services/instagram',
-  api2Url: 'http://pix-test.wix.com/services/instagram2'
+  apiUrl: '//pix.wix.com/services/instagram',
+  api2Url: '//pix.wix.com/services/instagram2'
 };
 src_sources_instagram_mappers_folder = function (data) {
   return {
@@ -1212,13 +1568,11 @@ src_sources_instagram_mappers_folder = function (data) {
   };
 };
 src_sources_instagram_parsers_folders = function (toFolder) {
-  
   return function (data) {
     return { data: [toFolder(data)] };
   };
 }(src_sources_instagram_mappers_folder);
 src_sources_instagram_parsers_error = function (Promise) {
-  
   return function (response) {
     if (response.code === 500) {
       response.code = 403;
@@ -1231,7 +1585,6 @@ src_sources_instagram_parsers_error = function (Promise) {
   };
 }(bluebird);
 src_sources_instagram_folders = function (http, toFolders, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toFolders(response.data);
@@ -1246,7 +1599,6 @@ src_sources_instagram_folders = function (http, toFolders, toError) {
   };
 }(src_utils_http, src_sources_instagram_parsers_folders, src_sources_instagram_parsers_error);
 src_sources_instagram_mappers_item = function (utils) {
-  
   return function (data) {
     if (!data.caption) {
       data.caption = { text: '' };
@@ -1266,7 +1618,6 @@ src_sources_instagram_mappers_item = function (utils) {
   };
 }(src_utils_utils);
 src_sources_instagram_parsers_items = function (toItem) {
-  
   return function (data) {
     data.next = data.next || {};
     var cursor = data.next.max_id || null, pageSize = data.next.count || null;
@@ -1280,7 +1631,6 @@ src_sources_instagram_parsers_items = function (toItem) {
   };
 }(src_sources_instagram_mappers_item);
 src_sources_instagram_items = function (http, toItems, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toItems(response.data);
@@ -1301,7 +1651,6 @@ src_sources_instagram_items = function (http, toItems, toError) {
   };
 }(src_utils_http, src_sources_instagram_parsers_items, src_sources_instagram_parsers_error);
 src_sources_instagram_Instagram = function (settings, initFolders, initItems, decorators, eventsList) {
-  
   return function () {
     var folders = initFolders(settings), items = initItems(settings);
     this.name = 'instagram';
@@ -1309,7 +1658,11 @@ src_sources_instagram_Instagram = function (settings, initFolders, initItems, de
     this.items = decorators.addEvents(this, eventsList.ITEMS, items);
   };
 }(src_sources_instagram_settings, src_sources_instagram_folders, src_sources_instagram_items, src_sources_decorators, src_events_list);
-src_sources_facebook_settings = { apiUrl: 'http://pix-test.wix.com/services/facebook2' };
+src_sources_facebook_settings = {
+  apiUrl: '//pix.wix.com/services/facebook2',
+  foldersLimit: 50,
+  itemsLimit: 50
+};
 src_sources_facebook_mappers_folder = function (data) {
   return {
     id: data.id,
@@ -1321,13 +1674,11 @@ src_sources_facebook_mappers_folder = function (data) {
   };
 };
 src_sources_facebook_parsers_folders = function (toFolder) {
-  
   return function (data) {
     return { data: data.data.map(toFolder) };
   };
 }(src_sources_facebook_mappers_folder);
 src_sources_facebook_parsers_error = function (Promise) {
-  
   return function (response) {
     if (response.code === 400 && response.data.code === 190) {
       response.code = 403;
@@ -1336,7 +1687,6 @@ src_sources_facebook_parsers_error = function (Promise) {
   };
 }(bluebird);
 src_sources_facebook_folders = function (http, toFolders, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toFolders(response.data);
@@ -1344,14 +1694,19 @@ src_sources_facebook_folders = function (http, toFolders, toError) {
     function failHandler(reason) {
       return toError(reason);
     }
-    function list() {
-      return http.get(settings.apiUrl + '/albums', null, { withCredentials: true }).then(successHandler, failHandler);
+    function list(folderID, options) {
+      options = options || {};
+      options.paging = options.paging || {};
+      var requestOptions = {
+        limit: options.paging.pageSize || settings.foldersLimit,
+        after: options.paging.cursor || null
+      };
+      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
     }
     return { list: list };
   };
 }(src_utils_http, src_sources_facebook_parsers_folders, src_sources_facebook_parsers_error);
 src_sources_facebook_mappers_item = function (utils) {
-  
   function findThumbnailUrl(images, minWidth, minHeight) {
     minHeight = minHeight || 190;
     minWidth = minWidth || 190;
@@ -1390,7 +1745,6 @@ src_sources_facebook_mappers_item = function (utils) {
   };
 }(src_utils_utils);
 src_sources_facebook_parsers_items = function (toItem) {
-  
   return function (data) {
     data.paging = data.paging || {};
     data.paging.cursors = data.paging.cursors || {};
@@ -1405,7 +1759,6 @@ src_sources_facebook_parsers_items = function (toItem) {
   };
 }(src_sources_facebook_mappers_item);
 src_sources_facebook_items = function (http, toItems, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toItems(response.data);
@@ -1418,7 +1771,7 @@ src_sources_facebook_items = function (http, toItems, toError) {
       options.paging = options.paging || {};
       var requestOptions = {
         album_id: folderId,
-        limit: options.paging.pageSize || 50,
+        limit: options.paging.pageSize || settings.itemsLimit,
         after: options.paging.cursor || null
       };
       return http.get(settings.apiUrl + '/photos', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
@@ -1427,7 +1780,6 @@ src_sources_facebook_items = function (http, toItems, toError) {
   };
 }(src_utils_http, src_sources_facebook_parsers_items, src_sources_facebook_parsers_error);
 src_sources_facebook_Facebook = function (settings, initFolders, initItems, decorators, eventsList) {
-  
   return function () {
     var folders = initFolders(settings), items = initItems(settings);
     this.name = 'facebook';
@@ -1435,7 +1787,11 @@ src_sources_facebook_Facebook = function (settings, initFolders, initItems, deco
     this.items = decorators.addEvents(this, eventsList.ITEMS, items);
   };
 }(src_sources_facebook_settings, src_sources_facebook_folders, src_sources_facebook_items, src_sources_decorators, src_events_list);
-src_sources_flickr_settings = { apiUrl: 'http://pix-test.wix.com/services/flickr' };
+src_sources_flickr_settings = {
+  apiUrl: '//pix.wix.com/services/flickr',
+  foldersLimit: 50,
+  itemsLimit: 50
+};
 src_sources_flickr_mappers_folder = function (data) {
   return {
     id: data.id,
@@ -1447,19 +1803,16 @@ src_sources_flickr_mappers_folder = function (data) {
   };
 };
 src_sources_flickr_parsers_folders = function (toFolder) {
-  
   return function (data) {
     return { data: data.photosets.photoset.map(toFolder) };
   };
 }(src_sources_flickr_mappers_folder);
 src_sources_flickr_parsers_error = function (Promise) {
-  
   return function (response) {
     return Promise.reject(response);
   };
 }(bluebird);
 src_sources_flickr_folders = function (http, toFolders, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toFolders(response.data);
@@ -1467,14 +1820,20 @@ src_sources_flickr_folders = function (http, toFolders, toError) {
     function failHandler(reason) {
       return toError(reason);
     }
-    function list() {
-      return http.get(settings.apiUrl + '/albums', { primary_photo_extras: 'url_t,url_s,url_m,url_b,url_o' }, { withCredentials: true }).then(successHandler, failHandler);
+    function list(folderId, options) {
+      options = options || {};
+      options.paging = options.paging || {};
+      var requestOptions = {
+        primary_photo_extras: 'url_t,url_s,url_m,url_b,url_o',
+        per_page: options.paging.pageSize || settings.foldersLimit,
+        page: options.paging.cursor || null
+      };
+      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
     }
     return { list: list };
   };
 }(src_utils_http, src_sources_flickr_parsers_folders, src_sources_flickr_parsers_error);
 src_sources_flickr_mappers_item = function (utils) {
-  
   function toThumbnails(photo) {
     var thumbnail = photo.url_m || photo.url_s || photo.url_t, big = photo.url_b || thumbnail, original = photo.url_o || big;
     return {
@@ -1501,7 +1860,6 @@ src_sources_flickr_mappers_item = function (utils) {
   };
 }(src_utils_utils);
 src_sources_flickr_parsers_items = function (toItem) {
-  
   return function (data) {
     var cursor = data.photoset.page < data.photoset.pages ? data.photoset.page + 1 : null, pageSize = +data.photoset.perpage;
     return {
@@ -1514,7 +1872,6 @@ src_sources_flickr_parsers_items = function (toItem) {
   };
 }(src_sources_flickr_mappers_item);
 src_sources_flickr_items = function (http, toItems, toError) {
-  
   return function (settings) {
     function successHandler(response) {
       return toItems(response.data);
@@ -1528,7 +1885,7 @@ src_sources_flickr_items = function (http, toItems, toError) {
       var requestOptions = {
         extras: 'url_t,url_s,url_m,url_b,url_o',
         set_id: folderId,
-        per_page: options.paging.pageSize || 50,
+        per_page: options.paging.pageSize || settings.itemsLimit,
         page: options.paging.cursor || null
       };
       return http.get(settings.apiUrl + '/photoset', requestOptions, { withCredentials: true }).then(successHandler).catch(failHandler);
@@ -1537,7 +1894,6 @@ src_sources_flickr_items = function (http, toItems, toError) {
   };
 }(src_utils_http, src_sources_flickr_parsers_items, src_sources_flickr_parsers_error);
 src_sources_flickr_Flickr = function (settings, initFolders, initItems, decorators, eventsList) {
-  
   return function () {
     var folders = initFolders(settings), items = initItems(settings);
     this.name = 'flickr';
@@ -1546,53 +1902,55 @@ src_sources_flickr_Flickr = function (settings, initFolders, initItems, decorato
   };
 }(src_sources_flickr_settings, src_sources_flickr_folders, src_sources_flickr_items, src_sources_decorators, src_events_list);
 src_sources_list = function (Private, Picasa, Instagram, Facebook, Flickr) {
-  
-  return {
+  /**
+   * @summary The list of available source constructors
+   * @enum
+   * @memberof wixmp
+   */
+  var sources = {
     PRIVATE: Private,
     PICASA: Picasa,
     INSTAGRAM: Instagram,
     FACEBOOK: Facebook,
     FLICKR: Flickr
   };
+  return sources;
 }(src_sources_private_Private, src_sources_picasa_Picasa, src_sources_instagram_Instagram, src_sources_facebook_Facebook, src_sources_flickr_Flickr);
 src_events_events = function (notifier, list, utils) {
-  
-  var events = {};
+  var events = utils.merge(list);
   function defineNonEnumerableProperty(name, value) {
     Object.defineProperty(events, name, {
       enumerable: false,
       value: value
     });
   }
-  events = utils.merge(list);
   defineNonEnumerableProperty('on', notifier.addListener);
   defineNonEnumerableProperty('off', notifier.removeListener);
   return events;
 }(src_events_notifier, src_events_list, src_utils_utils);
 src_connector_connector_settings = {
   PICASA: {
-    connectUrl: 'http://pix-test.wix.com/services/google/connect',
-    disconnectUrl: 'http://pix-test.wix.com/services/google/disconnect',
+    connectUrl: '//pix.wix.com/services/google/connect',
+    disconnectUrl: '//pix.wix.com/services/google/disconnect',
     parameterName: 'goglact'
   },
   INSTAGRAM: {
-    connectUrl: 'http://pix-test.wix.com/services/instagram/connect',
-    disconnectUrl: 'http://pix-test.wix.com/services/instagram/disconnect',
+    connectUrl: '//pix.wix.com/services/instagram/connect',
+    disconnectUrl: '//pix.wix.com/services/instagram/disconnect',
     parameterName: 'instact'
   },
   FACEBOOK: {
-    connectUrl: 'http://pix-test.wix.com/services/facebook/connect',
-    disconnectUrl: 'http://pix-test.wix.com/services/facebook/disconnect',
+    connectUrl: '//pix.wix.com/services/facebook/connect',
+    disconnectUrl: '//pix.wix.com/services/facebook/disconnect',
     parameterName: 'fbact'
   },
   FLICKR: {
-    connectUrl: 'http://pix-test.wix.com/services/flickr/connect',
-    disconnectUrl: 'http://pix-test.wix.com/services/flickr/disconnect',
+    connectUrl: '//pix.wix.com/services/flickr/connect',
+    disconnectUrl: '//pix.wix.com/services/flickr/disconnect',
     parameterName: 'flact'
   }
 };
 src_connector_connector = function (Promise, connectorSettings, http, utils) {
-  
   return function (adapterName, userSettings) {
     var settings = connectorSettings[adapterName];
     if (typeof settings !== 'object') {
@@ -1680,7 +2038,6 @@ src_services_bi_events_ids = {
   }
 };
 src_services_bi_request = function (BIEventIds, utils) {
-  
   function send(url, data) {
     var biImage = document.createElement('img');
     biImage.setAttribute('src', url + '?' + utils.encodeParams(data));
@@ -1690,7 +2047,7 @@ src_services_bi_request = function (BIEventIds, utils) {
     return new Date().getTime();
   }
   function getBaseHost() {
-    return 'http://frog.wixpress.com';  //return settings.biNotifications || (/\.wixpress\.com/i.test(settings.baseHost || document.location.host) ? 'http://frog.wix.com' : 'http://frog.wixpress.com');
+    return '//frog.wixpress.com';  //return settings.biNotifications || (/\.wixpress\.com/i.test(settings.baseHost || document.location.host) ? '//frog.wix.com' : '//frog.wixpress.com');
   }
   function benchmark(data) {
     return send(getBaseHost() + '/mg', {
@@ -1760,7 +2117,6 @@ src_services_bi_request = function (BIEventIds, utils) {
   };
 }(src_services_bi_events_ids, src_utils_utils);
 src_services_bi_bi = function (notifier, eventsList, sendRequest) {
-  
   return function (state) {
     var biListener = function (promise, params) {
       // params.eventTarget
@@ -1787,8 +2143,7 @@ src_services_bi_bi = function (notifier, eventsList, sendRequest) {
     });
   };
 }(src_events_notifier, src_events_list, src_services_bi_request);
-src_services_file_to_upload = function (Promise) {
-  
+src_services_upload_file_to_upload = function (Promise) {
   function canAbort(fileToUpload) {
     return fileToUpload.status === 'waiting' || fileToUpload.status === 'uploading';
   }
@@ -1851,7 +2206,9 @@ src_services_file_to_upload = function (Promise) {
         var codesToRetry = [
           -100,
           -201,
-          -406
+          401,
+          403,
+          408
         ];
         if (this.status === 'failed' && codesToRetry.indexOf(this.error.code) !== -1) {
           return true;
@@ -1871,8 +2228,7 @@ src_services_file_to_upload = function (Promise) {
   }
   return map;
 }(bluebird);
-src_services_upload_collection = function (Promise, fileToUploadMapper) {
-  
+src_services_upload_upload_collection = function (Promise, fileToUploadMapper) {
   var uploadQueue = [];
   var uploadIsInProgress = false;
   var uploadQueueDeferred = Promise.defer();
@@ -1988,14 +2344,16 @@ src_services_upload_collection = function (Promise, fileToUploadMapper) {
   }
   function signupUploadPromise(fileToUpload) {
     var processCurrentItemProgress = processItemProgress(fileToUpload);
-    fileToUpload.deferred.promise.progress(processCurrentItemProgress).then(function () {
+    fileToUpload.deferred.promise.progress(processCurrentItemProgress).then(function (result) {
+      fileToUpload.serverResponse = result;
       processCurrentItemProgress({
         status: 'succeeded',
         total: getFileSize(fileToUpload),
         loaded: getFileSize(fileToUpload)
       });
       currentUploadedTotal += getFileSize(fileToUpload);
-    }).catch(function () {
+    }).catch(function (reason) {
+      fileToUpload.serverResponse = reason;
       processCurrentItemProgress({
         status: 'failed',
         total: getFileSize(fileToUpload),
@@ -2048,9 +2406,11 @@ src_services_upload_collection = function (Promise, fileToUploadMapper) {
     upload: upload,
     clearQueue: clearQueue
   };
-}(bluebird, src_services_file_to_upload);
+}(bluebird, src_services_upload_file_to_upload);
 src_wixmp = function (Source, sources, events, externalSourceConnector, enableBI, Uploader) {
-  
+  /**
+   * @namespace wixmp
+   */
   return {
     Source: Source,
     sources: sources,
@@ -2059,6 +2419,6 @@ src_wixmp = function (Source, sources, events, externalSourceConnector, enableBI
     connectExternalSource: externalSourceConnector,
     Uploader: Uploader
   };
-}(src_sources_Source, src_sources_list, src_events_events, src_connector_connector, src_services_bi_bi, src_services_upload_collection);
+}(src_sources_Source, src_sources_list, src_events_events, src_connector_connector, src_services_bi_bi, src_services_upload_upload_collection);
 window.wixmp = src_wixmp;
 }());
