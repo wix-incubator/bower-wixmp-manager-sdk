@@ -231,7 +231,7 @@ src_utils_mappers = {
   },
   toError: function (error) {
     return {
-      code: error.status,
+      code: error.status || error.code,
       message: error.statusText || error.message || error.data.message || error.data.error && error.data.error.message || '',
       data: error.data && (error.data.errors || error.data.error || error.data)
     };
@@ -365,7 +365,9 @@ src_utils_http = function (Promise, utils, mappers) {
       url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
     }
     request.open(method.toUpperCase(), utils.normalizeUri(url));
-    request.responseType = options.responseType;
+    if (options.responseType) {
+      request.responseType = options.responseType;
+    }
     request.withCredentials = options.withCredentials;
     Object.keys(options.headers).forEach(function (name) {
       request.setRequestHeader(name, options.headers[name]);
@@ -415,7 +417,7 @@ src_utils_http = function (Promise, utils, mappers) {
       firstPromise = callMethod();
       var promise = new Promise(function (resolve, reject) {
         firstPromise.then(resolve, function (reason) {
-          if (reason.message === 'aborted_by_user') {
+          if (reason.message === 'aborted_by_user' || reason.code === 406) {
             reject(reason);
             return Promise.reject(reason);
           }
@@ -596,6 +598,12 @@ src_sources_private_folders = function (http, toFolder, toError) {
     function failHandler(reason) {
       return toError(reason);
     }
+    function toFoldersList(res) {
+      if (!res.data.folders) {
+        return [];
+      }
+      return res.data.folders.map(toFolder);
+    }
     /**
      * @summary Return the list of folders
      * @memberof source.folders
@@ -611,7 +619,7 @@ src_sources_private_folders = function (http, toFolder, toError) {
         media_type: options.mediaType || 'picture',
         folder_id: folderId || null
       }, { withCredentials: true }).then(function (response) {
-        return { data: response.data.folders.map(toFolder) };
+        return { data: toFoldersList(response) };
       }).catch(failHandler);
     }
     function removeFolder(folderId) {
@@ -1091,8 +1099,10 @@ src_sources_private_itemstrash = function (Promise, http, utils, toItem, toError
       if (!res.data.trash_files) {
         return [];
       }
-      return res.data.trash_files.map(function (item) {
-        return toItem(item, settings, thumbnailSizes);
+      return res.data.trash_files.map(function (_item) {
+        var item = toItem(_item, settings, thumbnailSizes);
+        item.isInTrash = true;
+        return item;
       });
     }
     var defaultPaging = {
@@ -1122,11 +1132,6 @@ src_sources_private_itemstrash = function (Promise, http, utils, toItem, toError
             cursor: response.data.cursor
           }
         };
-      }).then(function (response) {
-        response.data.forEach(function (item) {
-          item.isInTrash = true;
-        });
-        return response;
       }).catch(failHandler);
     }
     function removeItem(itemId) {
@@ -1157,6 +1162,16 @@ src_sources_private_folderstrash = function (Promise, http, utils, toFolder, toE
     function failHandler(reason) {
       return toError(reason);
     }
+    function toFoldersList(res) {
+      if (!res.data.trash_folders) {
+        return [];
+      }
+      return res.data.trash_folders.map(function (_folder) {
+        var folder = toFolder(_folder);
+        folder.isInTrash = true;
+        return folder;
+      });
+    }
     function list(folderId, options) {
       options = options || {};
       return http.get(settings.apiUrl + '/files/getpage/trash', {
@@ -1164,12 +1179,7 @@ src_sources_private_folderstrash = function (Promise, http, utils, toFolder, toE
         folder_id: folderId || null,
         trash_type: 'folder'
       }, { withCredentials: true }).then(function (response) {
-        return { data: response.data.trash_folders.map(toFolder) };
-      }).then(function (response) {
-        response.data.forEach(function (folder) {
-          folder.isInTrash = true;
-        });
-        return response;
+        return { data: toFoldersList(response) };
       }).catch(failHandler);
     }
     function removeFolder(folderId) {
@@ -1348,6 +1358,15 @@ src_events_list = {
 src_services_channel_channel = function (Promise, http, utils, notifier, eventsList) {
   return function (settings, adapter, itemMapper) {
     var channel = null, socket = null, jsApiAlreadyLoaded = false;
+    function emitEvent(result) {
+      var event = notifier.emit(adapter, eventsList.ITEM.UPDATE, {
+        arguments: [
+          result,
+          result
+        ]
+      });
+      event.resolve({ data: result });
+    }
     function open() {
       function onMessage(message) {
         console.log('message received:', message);
@@ -1358,15 +1377,12 @@ src_services_channel_channel = function (Promise, http, utils, notifier, eventsL
           message = JSON.parse(message.data);
           console.log(message);
           if (message.type === 'status_update') {
-            var result = itemMapper(message.file, settings, {}, true);
-            console.log(result);
-            var event = notifier.emit(adapter, eventsList.ITEM.UPDATE, {
-              arguments: [
-                result,
-                result
-              ]
-            });
-            event.resolve({ data: result });
+            if (message.file.op_status === 'READY') {
+              adapter.item.get(message.file.file_name).then(emitEvent);
+            } else {
+              var result = itemMapper(message.file, settings, {}, true);
+              emitEvent(result);
+            }
           }
         } catch (reason) {
           console.log('something is wrong:', reason, reason.stack);
@@ -2121,6 +2137,10 @@ src_services_bi_bi = function (notifier, eventsList, sendRequest) {
     var biListener = function (promise, params) {
       // params.eventTarget
       // params.eventName
+      // if called by emitWithArrayOfPromises
+      if (Array.isArray(promise)) {
+        promise = Promise.all(promise);
+      }
       sendRequest.benchmark(promise, params);
       var sendError = function (adapter, eventName, response) {
         sendRequest.error(adapter.name, eventName, response);
