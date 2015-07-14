@@ -206,7 +206,7 @@ src_utils_utils = function (Promise) {
       });
     },
     isGuid: function (guid) {
-      return /^\w{8}-(\w{4}-){3}\w{12}$/.test(guid);
+      return /^\w{8}-(\w{4}-){3}\w{12}(:\w+)?$/.test(guid);
     }
   };
   utils.min = utils.partial(minMaxFinder, 'min');
@@ -618,12 +618,18 @@ src_sources_private_folders = function (http, toFolder, toError) {
       return http.get(settings.apiUrl + '/folders', {
         media_type: options.mediaType || 'picture',
         folder_id: folderId || null
-      }, { withCredentials: true }).then(function (response) {
+      }, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (response) {
         return { data: toFoldersList(response) };
       }).catch(failHandler);
     }
-    function removeFolder(folderId) {
-      return http.post(settings.apiUrl + '/folders/' + folderId + '/delete', null, { withCredentials: true }).then(function () {
+    function removeFolder(folderId, options) {
+      return http.post(settings.apiUrl + '/folders/' + folderId + '/delete', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return folderId;
       }).catch(failHandler);
     }
@@ -633,8 +639,11 @@ src_sources_private_folders = function (http, toFolder, toError) {
      * @param {string[]} folderIds Array of folder ids
      * @returns {Promise}
      */
-    function remove(folderIds) {
-      return folderIds.map(removeFolder);
+    function remove(folderIds, options) {
+      options = options || {};
+      return folderIds.map(function (folderId) {
+        return removeFolder(folderId, options);
+      });
     }
     return {
       list: list,
@@ -704,7 +713,10 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
         folder_name: folderName,
         media_type: options.mediaType || 'picture',
         parent_folder_id: options.parentId || null
-      }, { withCredentials: true }).then(function (res) {
+      }, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (res) {
         res.data = toFolder(res.data);
         return res;
       }).catch(failHandler);
@@ -718,7 +730,7 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
      * @fulfill {Folder} Modified folder object
      * @reject {Error}
      */
-    function update(folder, newFolderProps) {
+    function update(folder, newFolderProps, options) {
       var arePropsValid = validateNewProps(newFolderProps);
       if (arePropsValid.valid === false) {
         return failHandler(mappers.toError({
@@ -734,7 +746,11 @@ src_sources_private_folder = function (http, mappers, utils, toFolder, toError, 
       if (newFolderProps.parentId) {
         propsToUpdate.parent_folder_id = newFolderProps.parentId;
       }
-      return http.post(settings.apiUrl + '/folders/' + folder.id + '/put', propsToUpdate, { withCredentials: true }).then(function (res) {
+      options = options || {};
+      return http.post(settings.apiUrl + '/folders/' + folder.id + '/put', propsToUpdate, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (res) {
         res.data = utils.extend({}, folder, newFolderProps);
         return res;
       }).catch(failHandler);
@@ -897,7 +913,10 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
         media_type: options.mediaType || 'picture'
       };
       queryParams.order = sort.direction === 'desc' ? '-' + sort.order : sort.order;
-      return http.get(settings.apiUrl + '/files/getpage', queryParams, { withCredentials: true }).then(function (response) {
+      return http.get(settings.apiUrl + '/files/getpage', queryParams, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (response) {
         return {
           data: toItemsList(response, options.thumbnails),
           paging: {
@@ -907,8 +926,11 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
         };
       }).catch(failHandler);
     }
-    function removeItem(itemId) {
-      return http.post(settings.apiUrl + '/files/' + itemId + '/delete', null, { withCredentials: true }).then(function () {
+    function removeItem(itemId, options) {
+      return http.post(settings.apiUrl + '/files/' + itemId + '/delete', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return itemId;
       }).catch(failHandler);
     }
@@ -918,8 +940,11 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
      * @param {Array} itemsId
      * @returns {Array}
      */
-    function remove(itemsId) {
-      return itemsId.map(removeItem);
+    function remove(itemsId, options) {
+      options = options || {};
+      return itemsId.map(function (itemId) {
+        return removeItem(itemId, options);
+      });
     }
     /**
      * @summary Return list of items found by tag
@@ -942,7 +967,8 @@ src_sources_private_items = function (Promise, http, utils, toItem, toError) {
       };
       return http.get(settings.apiUrl + '/files/get?tag=' + tag, queryParams, {
         withCredentials: true,
-        cache: false
+        cache: false,
+        headers: options.headers || {}
       }).then(function (response) {
         return {
           data: toItemsList(response),
@@ -988,28 +1014,33 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
       }
       return http.get(settings.apiUrl + '/files/' + getEndpoind(fileSource.mediaType) + '/url', {
         media_type: fileSource.mediaType,
-        file_name: fileSource.name,
+        file_name: '_.' + fileSource.name.split('.').pop(),
         file_size: fileSource.size,
         content_type: fileSource.file.type
       }, { withCredentials: true });
     }
-    function uploadByUrl(fileSource) {
+    function uploadByUrl(fileSource, options) {
+      options = options || {};
       var params = {
-        url: encodeURIComponent(utils.normalizeUri(fileSource.url)),
+        url: utils.normalizeUri(fileSource.url),
         media_type: fileSource.mediaType,
         name: fileSource.name || 'Untitled',
         tags: (fileSource.tags || []).join(',') || null,
         parent_folder_id: fileSource.folderId || null
       };
-      var apiUrl = settings.apiUrl + '/files/upload/external?url=' + params.url + '&media_type=' + params.media_type;
-      var uploadPromise = http.post(apiUrl, params, { withCredentials: true }).progress(function (progress) {
+      var apiUrl = settings.apiUrl + '/files/upload/external';
+      var uploadPromise = http.get(apiUrl, params, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).progress(function (progress) {
         uploadPromise.notify(progress);
       }).then(function (response) {
         return toItem(response.data, settings);
       });
       return uploadPromise;
     }
-    function upload(fileSource) {
+    function upload(fileSource, options) {
+      options = options || {};
       var fileToUpload = {
         parent_folder_id: fileSource.folderId || null,
         file: fileSource.file,
@@ -1024,7 +1055,10 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
       }
       var uploadPromiseChain = getUploadUrl(fileSource).then(function (response) {
         fileToUpload.upload_token = response.data.upload_token;
-        return http.upload(response.data.upload_url, fileToUpload, { withCredentials: true }).progress(function (progress) {
+        return http.upload(response.data.upload_url, fileToUpload, {
+          withCredentials: true,
+          headers: options.headers || {}
+        }).progress(function (progress) {
           uploadPromiseChain.notify(progress);
         });
       }).then(function (response) {
@@ -1040,10 +1074,12 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
      * @fulfill {Item}
      * @reject {Error}
      */
-    function get(itemId) {
+    function get(itemId, options) {
+      options = options || {};
       return http.get(settings.apiUrl + '/files/' + itemId, null, {
         withCredentials: true,
-        cache: false
+        cache: false,
+        headers: options.headers || {}
       }).then(function (result) {
         return toItem(result.data, settings);
       }).catch(failHandler);
@@ -1057,7 +1093,7 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
      * @fulfill {Item} Modified item object
      * @reject {Error}
      */
-    function update(item, newItemProps) {
+    function update(item, newItemProps, options) {
       var arePropsValid = validateNewProps(newItemProps);
       if (arePropsValid.valid === false) {
         return failHandler(mappers.toError({
@@ -1076,7 +1112,11 @@ src_sources_private_item = function (Promise, http, utils, toItem, toError, vali
       if (newItemProps.tags) {
         propsToUpdate.tags = newItemProps.tags.join(',');
       }
-      return http.post(settings.apiUrl + '/files/' + item.id + '/put', propsToUpdate, { withCredentials: true }).then(function (res) {
+      options = options || {};
+      return http.post(settings.apiUrl + '/files/' + item.id + '/put', propsToUpdate, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (res) {
         res.data = utils.extend({}, item, newItemProps);
         return res;
       }).catch(failHandler);
@@ -1124,7 +1164,10 @@ src_sources_private_itemstrash = function (Promise, http, utils, toItem, toError
         media_type: options.mediaType || 'picture'
       };
       queryParams.order = sort.direction === 'desc' ? '-' + sort.order : sort.order;
-      return http.get(settings.apiUrl + '/files/getpage/trash', queryParams, { withCredentials: true }).then(function (response) {
+      return http.get(settings.apiUrl + '/files/getpage/trash', queryParams, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (response) {
         return {
           data: toItemList(response, options.thumbnails),
           paging: {
@@ -1134,21 +1177,33 @@ src_sources_private_itemstrash = function (Promise, http, utils, toItem, toError
         };
       }).catch(failHandler);
     }
-    function removeItem(itemId) {
-      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/delete', null, { withCredentials: true }).then(function () {
+    function removeItem(itemId, options) {
+      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/delete', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return itemId;
       }).catch(failHandler);
     }
-    function remove(itemsId) {
-      return itemsId.map(removeItem);
+    function remove(itemsId, options) {
+      options = options || {};
+      return itemsId.map(function (itemId) {
+        return removeItem(itemId, options);
+      });
     }
-    function restoreItem(itemId) {
-      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/restore', null, { withCredentials: true }).then(function () {
+    function restoreItem(itemId, options) {
+      return http.post(settings.apiUrl + '/trash/files/' + itemId + '/restore', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return itemId;
       }).catch(failHandler);
     }
-    function restore(itemsId) {
-      return itemsId.map(restoreItem);
+    function restore(itemsId, options) {
+      options = options || {};
+      return itemsId.map(function (itemId) {
+        return restoreItem(itemId, options);
+      });
     }
     return {
       list: list,
@@ -1178,25 +1233,40 @@ src_sources_private_folderstrash = function (Promise, http, utils, toFolder, toE
         media_type: options.mediaType || 'picture',
         folder_id: folderId || null,
         trash_type: 'folder'
-      }, { withCredentials: true }).then(function (response) {
+      }, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function (response) {
         return { data: toFoldersList(response) };
       }).catch(failHandler);
     }
-    function removeFolder(folderId) {
-      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/delete', null, { withCredentials: true }).then(function () {
+    function removeFolder(folderId, options) {
+      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/delete', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return folderId;
       }).catch(failHandler);
     }
-    function remove(folderIds) {
-      return folderIds.map(removeFolder);
+    function remove(folderIds, options) {
+      options = options || {};
+      return folderIds.map(function (folderId) {
+        return removeFolder(folderId, options);
+      });
     }
-    function restoreFolder(folderId) {
-      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/restore', null, { withCredentials: true }).then(function () {
+    function restoreFolder(folderId, options) {
+      return http.post(settings.apiUrl + '/trash/folders/' + folderId + '/restore', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(function () {
         return folderId;
       }).catch(failHandler);
     }
-    function restore(folderIds) {
-      return folderIds.map(restoreFolder);
+    function restore(folderIds, options) {
+      options = options || {};
+      return folderIds.map(function (folderId) {
+        return restoreFolder(folderId, options);
+      });
     }
     return {
       list: list,
@@ -1487,7 +1557,10 @@ src_sources_picasa_folders = function (http, toFolders, toError) {
         'max-results': options.paging.pageSize || settings.foldersLimit,
         'start-index': options.paging.cursor || 1
       };
-      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler).catch(failHandler);
+      return http.get(settings.apiUrl + '/albums', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1556,7 +1629,10 @@ src_sources_picasa_items = function (http, toItems, toError) {
         'max-results': options.paging.pageSize || settings.itemsLimit,
         'start-index': options.paging.cursor || 1
       };
-      return http.get(settings.apiUrl + '/photos', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.apiUrl + '/photos', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1608,8 +1684,12 @@ src_sources_instagram_folders = function (http, toFolders, toError) {
     function failHandler(reason) {
       return toError(reason);
     }
-    function list() {
-      return http.get(settings.apiUrl + '/user', null, { withCredentials: true }).then(successHandler, failHandler);
+    function list(folderId, options) {
+      options = options || {};
+      return http.get(settings.apiUrl + '/user', null, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1661,7 +1741,10 @@ src_sources_instagram_items = function (http, toItems, toError) {
         count: options.paging.pageSize || 50,
         max_id: options.paging.cursor || null
       };
-      return http.get(settings.api2Url + '/photos', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.api2Url + '/photos', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1717,7 +1800,10 @@ src_sources_facebook_folders = function (http, toFolders, toError) {
         limit: options.paging.pageSize || settings.foldersLimit,
         after: options.paging.cursor || null
       };
-      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.apiUrl + '/albums', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1790,7 +1876,10 @@ src_sources_facebook_items = function (http, toItems, toError) {
         limit: options.paging.pageSize || settings.itemsLimit,
         after: options.paging.cursor || null
       };
-      return http.get(settings.apiUrl + '/photos', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.apiUrl + '/photos', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1844,7 +1933,10 @@ src_sources_flickr_folders = function (http, toFolders, toError) {
         per_page: options.paging.pageSize || settings.foldersLimit,
         page: options.paging.cursor || null
       };
-      return http.get(settings.apiUrl + '/albums', requestOptions, { withCredentials: true }).then(successHandler, failHandler);
+      return http.get(settings.apiUrl + '/albums', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -1904,7 +1996,10 @@ src_sources_flickr_items = function (http, toItems, toError) {
         per_page: options.paging.pageSize || settings.itemsLimit,
         page: options.paging.cursor || null
       };
-      return http.get(settings.apiUrl + '/photoset', requestOptions, { withCredentials: true }).then(successHandler).catch(failHandler);
+      return http.get(settings.apiUrl + '/photoset', requestOptions, {
+        withCredentials: true,
+        headers: options.headers || {}
+      }).then(successHandler).catch(failHandler);
     }
     return { list: list };
   };
@@ -2063,7 +2158,8 @@ src_services_bi_request = function (BIEventIds, utils) {
     return new Date().getTime();
   }
   function getBaseHost() {
-    return '//frog.wixpress.com';  //return settings.biNotifications || (/\.wixpress\.com/i.test(settings.baseHost || document.location.host) ? '//frog.wix.com' : '//frog.wixpress.com');
+    //return '//frog.wixpress.com';
+    return /\.wixpress\.com/i.test(document.location.host) || /local\./i.test(document.location.host) ? '//frog.wixpress.com' : '//frog.wix.com';
   }
   function benchmark(data) {
     return send(getBaseHost() + '/mg', {
